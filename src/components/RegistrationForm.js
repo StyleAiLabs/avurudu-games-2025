@@ -1,8 +1,8 @@
 // src/components/RegistrationForm.js
-import React, { useState } from 'react';
-import { Check, AlertCircle, ChevronDown, User, Phone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Check, AlertCircle, ChevronDown, User, Phone, Clock, MapPin, Users, Info } from 'lucide-react';
 
-// Define the age groups and games
+// Define the age groups
 const ageGroups = [
     'Under 5',
     'Under 6',
@@ -11,17 +11,6 @@ const ageGroups = [
     'Between 12-15',
     'Adult (Over 16)',
     'Adult Over 60'
-];
-
-const games = [
-    'Kotta Pora (Pillow Fighting)',
-    'Kana Mutti (Pot Breaking)',
-    'Banis Kaema (Bun Eating)',
-    'Lissana Gaha Nageema (Greasy Pole Climbing)',
-    'Aliyata Aha Thaebeema (Feeding the Elephant)',
-    'Kamba Adeema (Tug of War)',
-    'Coconut Scraping',
-    'Lime and Spoon Race'
 ];
 
 const RegistrationForm = () => {
@@ -37,6 +26,35 @@ const RegistrationForm = () => {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [submitError, setSubmitError] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [games, setGames] = useState([]);
+    const [loadingGames, setLoadingGames] = useState(true);
+    const [gamesError, setGamesError] = useState(null);
+
+    // Fetch games from the API
+    useEffect(() => {
+        const fetchGames = async () => {
+            setLoadingGames(true);
+            setGamesError(null);
+
+            try {
+                const response = await fetch('/api/games');
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch games');
+                }
+
+                const data = await response.json();
+                setGames(data);
+            } catch (error) {
+                console.error('Error fetching games:', error);
+                setGamesError(error.message);
+            } finally {
+                setLoadingGames(false);
+            }
+        };
+
+        fetchGames();
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -290,21 +308,66 @@ const RegistrationForm = () => {
                                 )}
                                 <div className="relative">
                                     <div className="space-y-2 max-h-60 overflow-y-auto p-4 border border-gray-300 rounded-md shadow-sm">
-                                        {games.map((game) => (
-                                            <div key={game} className="flex items-center hover:bg-orange-50 p-2 rounded-md transition-colors duration-150">
-                                                <input
-                                                    id={`game-${game}`}
-                                                    name="games"
-                                                    type="checkbox"
-                                                    checked={formData.selectedGames.includes(game)}
-                                                    onChange={() => handleGameSelection(game)}
-                                                    className="h-5 w-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
-                                                />
-                                                <label htmlFor={`game-${game}`} className="ml-3 text-sm text-gray-700 font-medium cursor-pointer flex-1">
-                                                    {game}
-                                                </label>
+                                        {loadingGames ? (
+                                            <div className="text-center py-4">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+                                                <p className="mt-2 text-gray-600 text-sm">Loading games...</p>
                                             </div>
-                                        ))}
+                                        ) : gamesError ? (
+                                            <div className="text-center py-4">
+                                                <AlertCircle className="h-8 w-8 text-red-500 mx-auto" />
+                                                <p className="mt-2 text-red-600 text-sm">{gamesError}</p>
+                                                <p className="text-gray-500 text-xs mt-1">Please refresh the page to try again</p>
+                                            </div>
+                                        ) : games.length === 0 ? (
+                                            <div className="text-center py-4">
+                                                <p className="text-gray-500">No games available for registration</p>
+                                            </div>
+                                        ) : (
+                                            games.map((game) => (
+                                                <div
+                                                    key={game.id}
+                                                    className={`flex flex-col hover:bg-orange-50 p-3 rounded-md transition-colors duration-150 border ${formData.ageGroup && !game.age_limit.includes(formData.ageGroup) ? 'opacity-50' : ''}`}
+                                                >
+                                                    <div className="flex items-start">
+                                                        <input
+                                                            id={`game-${game.id}`}
+                                                            name="games"
+                                                            type="checkbox"
+                                                            checked={formData.selectedGames.includes(game.name)}
+                                                            onChange={() => handleGameSelection(game.name)}
+                                                            className="h-5 w-5 mt-1 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                                                            disabled={formData.ageGroup && !game.age_limit.includes(formData.ageGroup)}
+                                                        />
+                                                        <label htmlFor={`game-${game.id}`} className="ml-3 cursor-pointer flex-1">
+                                                            <div className="font-medium text-gray-800">{game.name}</div>
+                                                            <div className="mt-1.5 text-xs text-gray-500 flex flex-wrap gap-x-3 gap-y-1">
+                                                                <span className="inline-flex items-center">
+                                                                    <Users className="h-3.5 w-3.5 mr-1" />
+                                                                    {game.age_limit}
+                                                                </span>
+                                                                <span className="inline-flex items-center">
+                                                                    <MapPin className="h-3.5 w-3.5 mr-1" />
+                                                                    {game.game_zone}
+                                                                </span>
+                                                                <span className="inline-flex items-center">
+                                                                    <Clock className="h-3.5 w-3.5 mr-1" />
+                                                                    {game.game_time}
+                                                                </span>
+                                                            </div>
+                                                            {game.pre_registration === 'Y' && (
+                                                                <div className="mt-1.5">
+                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                                        <Info className="h-3 w-3 mr-1" />
+                                                                        Pre-registration required
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
                                     <div className="absolute inset-0 rounded-md pointer-events-none ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-orange-500" aria-hidden="true"></div>
                                 </div>

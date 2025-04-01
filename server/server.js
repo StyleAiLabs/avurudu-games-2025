@@ -3,7 +3,15 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
-const { registerParticipant, getAllParticipants } = require('./db');
+const {
+    registerParticipant,
+    getAllParticipants,
+    getAllGames,
+    getGameById,
+    createGame,
+    updateGame,
+    deleteGame
+} = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -121,6 +129,150 @@ app.get('/api/admin/participants', basicAuth, (req, res) => {
 // API health check endpoint
 app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Public endpoint to get all games for the registration form
+app.get('/api/games', (req, res) => {
+    console.log('Request received for all games');
+
+    getAllGames((err, games) => {
+        if (err) {
+            console.error('Error fetching games:', err.message);
+            return res.status(500).json({ error: 'Failed to fetch games: ' + err.message });
+        }
+
+        console.log(`Returning ${games.length} games`);
+        res.json(games);
+    });
+});
+
+// Protected admin API endpoint to get all games
+app.get('/api/admin/games', basicAuth, (req, res) => {
+    console.log('Admin request received for all games');
+
+    getAllGames((err, games) => {
+        if (err) {
+            console.error('Error fetching games:', err.message);
+            return res.status(500).json({ error: 'Failed to fetch games: ' + err.message });
+        }
+
+        console.log(`Returning ${games.length} games to admin`);
+        res.json(games);
+    });
+});
+
+// Protected admin API endpoint to get a game by ID
+app.get('/api/admin/games/:id', basicAuth, (req, res) => {
+    const id = req.params.id;
+    console.log(`Admin request received for game with ID: ${id}`);
+
+    getGameById(id, (err, game) => {
+        if (err) {
+            console.error(`Error fetching game with ID ${id}:`, err.message);
+            if (err.message.includes('not found')) {
+                return res.status(404).json({ error: `Game with ID ${id} not found` });
+            }
+            return res.status(500).json({ error: 'Failed to fetch game: ' + err.message });
+        }
+
+        console.log(`Returning game with ID ${id} to admin`);
+        res.json(game);
+    });
+});
+
+// Protected admin API endpoint to create a new game
+app.post('/api/admin/games', basicAuth, (req, res) => {
+    console.log('Admin request received to create a new game:', req.body);
+
+    const game = {
+        name: req.body.name,
+        ageLimit: req.body.ageLimit,
+        preRegistration: req.body.preRegistration || 'Y',
+        gameZone: req.body.gameZone,
+        gameTime: req.body.gameTime
+    };
+
+    // Validate required fields
+    if (!game.name || !game.ageLimit || !game.gameZone || !game.gameTime) {
+        console.warn('Game creation validation failed: Missing required fields');
+        return res.status(400).json({ error: 'Name, age limit, game zone and game time are required' });
+    }
+
+    createGame(game, (err, result) => {
+        if (err) {
+            console.error('Error creating game:', err.message);
+            return res.status(500).json({ error: 'Failed to create game: ' + err.message });
+        }
+
+        console.log('Game creation successful:', result);
+        res.status(201).json(result);
+    });
+});
+
+// Protected admin API endpoint to update an existing game
+app.put('/api/admin/games/:id', basicAuth, (req, res) => {
+    const id = req.params.id;
+    console.log(`Admin request received to update game with ID: ${id}`, req.body);
+
+    const game = {
+        name: req.body.name,
+        ageLimit: req.body.ageLimit,
+        preRegistration: req.body.preRegistration,
+        gameZone: req.body.gameZone,
+        gameTime: req.body.gameTime
+    };
+
+    // Validate required fields
+    if (!game.name || !game.ageLimit || !game.gameZone || !game.gameTime) {
+        console.warn('Game update validation failed: Missing required fields');
+        return res.status(400).json({ error: 'Name, age limit, game zone and game time are required' });
+    }
+
+    updateGame(id, game, (err, result) => {
+        if (err) {
+            console.error(`Error updating game with ID ${id}:`, err.message);
+            if (err.message.includes('not found')) {
+                return res.status(404).json({ error: `Game with ID ${id} not found` });
+            }
+            return res.status(500).json({ error: 'Failed to update game: ' + err.message });
+        }
+
+        console.log('Game update successful:', result);
+        res.json(result);
+    });
+});
+
+// Protected admin API endpoint to delete a game
+app.delete('/api/admin/games/:id', basicAuth, (req, res) => {
+    const id = req.params.id;
+    console.log(`Admin request received to delete game with ID: ${id}`);
+
+    deleteGame(id, (err, result) => {
+        if (err) {
+            console.error(`Error deleting game with ID ${id}:`, err.message);
+            if (err.message.includes('not found')) {
+                return res.status(404).json({ error: `Game with ID ${id} not found` });
+            }
+            return res.status(500).json({ error: 'Failed to delete game: ' + err.message });
+        }
+
+        console.log(`Game with ID ${id} deleted successfully`);
+        res.status(204).send();
+    });
+});
+
+// New endpoint for creating games with additional logging
+app.post('/games', basicAuth, async (req, res) => {
+    console.log('Received game data:', req.body);
+
+    const { name, age_limit, pre_registration, game_zone, game_time } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+        console.log('Name validation failed:', { receivedName: name });
+        return res.status(400).json({ error: 'Game name is required' });
+    }
+
+    // ...rest of the validation and game creation code
 });
 
 // The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
