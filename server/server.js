@@ -1,4 +1,4 @@
-// server/server.js - Updated authentication
+// server/server.js - Updated with game management endpoints
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -7,7 +7,6 @@ const {
     registerParticipant,
     getAllParticipants,
     getAllGames,
-    getGameById,
     createGame,
     updateGame,
     deleteGame
@@ -106,6 +105,21 @@ app.post('/api/register', (req, res) => {
     });
 });
 
+// API endpoint to get all games
+app.get('/api/games', (req, res) => {
+    console.log('Request received for all games');
+
+    getAllGames((err, games) => {
+        if (err) {
+            console.error('Error fetching games:', err.message);
+            return res.status(500).json({ error: 'Failed to fetch games: ' + err.message });
+        }
+
+        console.log(`Returning ${games.length} games`);
+        res.json(games);
+    });
+});
+
 // Simple admin authentication test endpoint
 app.get('/api/admin/auth-test', basicAuth, (req, res) => {
     res.json({ success: true, message: 'Authentication successful' });
@@ -126,57 +140,29 @@ app.get('/api/admin/participants', basicAuth, (req, res) => {
     });
 });
 
-// API health check endpoint
-app.get('/api/health', (req, res) => {
-    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Public endpoint to get all games for the registration form
-app.get('/api/games', (req, res) => {
-    console.log('Request received for all games');
-
-    getAllGames((err, games) => {
-        if (err) {
-            console.error('Error fetching games:', err.message);
-            return res.status(500).json({ error: 'Failed to fetch games: ' + err.message });
-        }
-
-        console.log(`Returning ${games.length} games`);
-        res.json(games);
-    });
-});
-
 // Protected admin API endpoint to get all games
 app.get('/api/admin/games', basicAuth, (req, res) => {
     console.log('Admin request received for all games');
 
+    // Get the credentials from the request
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+        const base64Credentials = authHeader.split(' ')[1];
+        const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
+        const [username, password] = credentials.split(':');
+        console.log(`Request from user: ${username}`);
+    }
+
     getAllGames((err, games) => {
         if (err) {
             console.error('Error fetching games:', err.message);
             return res.status(500).json({ error: 'Failed to fetch games: ' + err.message });
         }
 
-        console.log(`Returning ${games.length} games to admin`);
-        res.json(games);
-    });
-});
-
-// Protected admin API endpoint to get a game by ID
-app.get('/api/admin/games/:id', basicAuth, (req, res) => {
-    const id = req.params.id;
-    console.log(`Admin request received for game with ID: ${id}`);
-
-    getGameById(id, (err, game) => {
-        if (err) {
-            console.error(`Error fetching game with ID ${id}:`, err.message);
-            if (err.message.includes('not found')) {
-                return res.status(404).json({ error: `Game with ID ${id} not found` });
-            }
-            return res.status(500).json({ error: 'Failed to fetch game: ' + err.message });
-        }
-
-        console.log(`Returning game with ID ${id} to admin`);
-        res.json(game);
+        // If no games were found, return an empty array instead of null
+        const safeGames = games || [];
+        console.log(`Returning ${safeGames.length} games to admin`);
+        res.json(safeGames);
     });
 });
 
@@ -184,95 +170,108 @@ app.get('/api/admin/games/:id', basicAuth, (req, res) => {
 app.post('/api/admin/games', basicAuth, (req, res) => {
     console.log('Admin request received to create a new game:', req.body);
 
-    const game = {
+    // Extract game data from request
+    const gameData = {
         name: req.body.name,
-        ageLimit: req.body.ageLimit,
-        preRegistration: req.body.preRegistration || 'Y',
-        gameZone: req.body.gameZone,
-        gameTime: req.body.gameTime
+        age_limit: req.body.age_limit,
+        pre_registration: req.body.pre_registration,
+        game_zone: req.body.game_zone,
+        game_time: req.body.game_time
     };
 
     // Validate required fields
-    if (!game.name || !game.ageLimit || !game.gameZone || !game.gameTime) {
-        console.warn('Game creation validation failed: Missing required fields');
-        return res.status(400).json({ error: 'Name, age limit, game zone and game time are required' });
+    if (!gameData.name) {
+        console.warn('Game creation validation failed: Game name is required');
+        return res.status(400).json({ error: 'Game name is required' });
     }
 
-    createGame(game, (err, result) => {
+    createGame(gameData, (err, game) => {
         if (err) {
             console.error('Error creating game:', err.message);
+
+            // Check for name uniqueness error
+            if (err.message.includes('already exists')) {
+                return res.status(409).json({ error: err.message });
+            }
+
             return res.status(500).json({ error: 'Failed to create game: ' + err.message });
         }
 
-        console.log('Game creation successful:', result);
-        res.status(201).json(result);
+        console.log('Game created successfully:', game);
+        res.status(201).json(game);
     });
 });
 
 // Protected admin API endpoint to update an existing game
 app.put('/api/admin/games/:id', basicAuth, (req, res) => {
-    const id = req.params.id;
-    console.log(`Admin request received to update game with ID: ${id}`, req.body);
+    const gameId = parseInt(req.params.id);
+    console.log(`Admin request received to update game ${gameId}:`, req.body);
 
-    const game = {
-        name: req.body.name,
-        ageLimit: req.body.ageLimit,
-        preRegistration: req.body.preRegistration,
-        gameZone: req.body.gameZone,
-        gameTime: req.body.gameTime
-    };
-
-    // Validate required fields
-    if (!game.name || !game.ageLimit || !game.gameZone || !game.gameTime) {
-        console.warn('Game update validation failed: Missing required fields');
-        return res.status(400).json({ error: 'Name, age limit, game zone and game time are required' });
+    if (isNaN(gameId)) {
+        return res.status(400).json({ error: 'Invalid game ID' });
     }
 
-    updateGame(id, game, (err, result) => {
+    // Extract game data from request
+    const gameData = {
+        name: req.body.name,
+        age_limit: req.body.age_limit,
+        pre_registration: req.body.pre_registration,
+        game_zone: req.body.game_zone,
+        game_time: req.body.game_time
+    };
+
+    updateGame(gameId, gameData, (err, game) => {
         if (err) {
-            console.error(`Error updating game with ID ${id}:`, err.message);
+            console.error('Error updating game:', err.message);
+
             if (err.message.includes('not found')) {
-                return res.status(404).json({ error: `Game with ID ${id} not found` });
+                return res.status(404).json({ error: err.message });
             }
+
+            if (err.message.includes('already exists')) {
+                return res.status(409).json({ error: err.message });
+            }
+
             return res.status(500).json({ error: 'Failed to update game: ' + err.message });
         }
 
-        console.log('Game update successful:', result);
-        res.json(result);
+        console.log('Game updated successfully:', game);
+        res.json(game);
     });
 });
 
 // Protected admin API endpoint to delete a game
 app.delete('/api/admin/games/:id', basicAuth, (req, res) => {
-    const id = req.params.id;
-    console.log(`Admin request received to delete game with ID: ${id}`);
+    const gameId = parseInt(req.params.id);
+    console.log(`Admin request received to delete game ${gameId}`);
 
-    deleteGame(id, (err, result) => {
+    if (isNaN(gameId)) {
+        return res.status(400).json({ error: 'Invalid game ID' });
+    }
+
+    deleteGame(gameId, (err, result) => {
         if (err) {
-            console.error(`Error deleting game with ID ${id}:`, err.message);
+            console.error('Error deleting game:', err.message);
+
             if (err.message.includes('not found')) {
-                return res.status(404).json({ error: `Game with ID ${id} not found` });
+                return res.status(404).json({ error: err.message });
             }
+
+            if (err.message.includes('associated with')) {
+                return res.status(409).json({ error: err.message });
+            }
+
             return res.status(500).json({ error: 'Failed to delete game: ' + err.message });
         }
 
-        console.log(`Game with ID ${id} deleted successfully`);
-        res.status(204).send();
+        console.log('Game deleted successfully:', result);
+        res.json(result);
     });
 });
 
-// New endpoint for creating games with additional logging
-app.post('/games', basicAuth, async (req, res) => {
-    console.log('Received game data:', req.body);
-
-    const { name, age_limit, pre_registration, game_zone, game_time } = req.body;
-
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-        console.log('Name validation failed:', { receivedName: name });
-        return res.status(400).json({ error: 'Game name is required' });
-    }
-
-    // ...rest of the validation and game creation code
+// API health check endpoint
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.

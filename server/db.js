@@ -43,14 +43,16 @@ function createTables() {
         }
     });
 
-    // Games table with enhanced attributes
+    // Games table with metadata
     db.run(`CREATE TABLE IF NOT EXISTS games (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    age_limit TEXT NOT NULL DEFAULT 'All Ages',
-    pre_registration TEXT NOT NULL DEFAULT 'Y',
-    game_zone TEXT NOT NULL DEFAULT 'Main Area',
-    game_time TEXT NOT NULL DEFAULT 'TBD'
+    age_limit TEXT,
+    pre_registration TEXT,
+    game_zone TEXT,
+    game_time TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`, function (err) {
         if (err) {
             console.error('Error creating games table:', err.message);
@@ -82,211 +84,152 @@ function populateGames() {
     const games = [
         {
             name: 'Kotta Pora (Pillow Fighting)',
-            age_limit: 'Between 6-12',
+            age_limit: 'Under 12',
             pre_registration: 'Y',
-            game_zone: 'Field A',
+            game_zone: 'Zone A',
             game_time: '10:00 AM'
         },
         {
             name: 'Kana Mutti (Pot Breaking)',
-            age_limit: 'Adult (Over 16)',
+            age_limit: 'All Ages',
             pre_registration: 'Y',
-            game_zone: 'Field B',
-            game_time: '11:30 AM'
+            game_zone: 'Zone B',
+            game_time: '11:00 AM'
         },
         {
             name: 'Banis Kaema (Bun Eating)',
             age_limit: 'All Ages',
             pre_registration: 'Y',
-            game_zone: 'Main Stage',
-            game_time: '1:00 PM'
+            game_zone: 'Zone C',
+            game_time: '12:00 PM'
         },
         {
             name: 'Lissana Gaha Nageema (Greasy Pole Climbing)',
             age_limit: 'Adult (Over 16)',
-            pre_registration: 'Y',
-            game_zone: 'Field C',
-            game_time: '2:30 PM'
+            pre_registration: 'N',
+            game_zone: 'Zone D',
+            game_time: '1:00 PM'
         },
         {
             name: 'Aliyata Aha Thaebeema (Feeding the Elephant)',
             age_limit: 'Under 12',
             pre_registration: 'Y',
-            game_zone: 'Field A',
-            game_time: '11:00 AM'
+            game_zone: 'Zone A',
+            game_time: '2:00 PM'
         },
         {
             name: 'Kamba Adeema (Tug of War)',
             age_limit: 'All Ages',
-            pre_registration: 'N',
-            game_zone: 'Field B',
+            pre_registration: 'Y',
+            game_zone: 'Zone E',
             game_time: '3:00 PM'
         },
         {
             name: 'Coconut Scraping',
             age_limit: 'Adult (Over 16)',
-            pre_registration: 'Y',
-            game_zone: 'Cooking Area',
-            game_time: '12:00 PM'
+            pre_registration: 'N',
+            game_zone: 'Zone B',
+            game_time: '4:00 PM'
         },
         {
             name: 'Lime and Spoon Race',
-            age_limit: 'Under 12',
+            age_limit: 'All Ages',
             pre_registration: 'Y',
-            game_zone: 'Track Area',
-            game_time: '10:30 AM'
+            game_zone: 'Zone C',
+            game_time: '5:00 PM'
         }
     ];
 
-    console.log('Populating games table...');
+    console.log('Populating games table with metadata...');
 
-    // Insert games one by one with full details
-    const insertGame = db.prepare(`
-        INSERT OR IGNORE INTO games 
-        (name, age_limit, pre_registration, game_zone, game_time) 
-        VALUES (?, ?, ?, ?, ?)
-    `);
+    // Create a Promise-based function to insert games sequentially
+    const insertGamesSequentially = () => {
+        return new Promise((resolve, reject) => {
+            db.serialize(() => {
+                // Begin transaction for batch inserts
+                db.run('BEGIN TRANSACTION');
 
-    games.forEach(game => {
-        insertGame.run(
-            game.name,
-            game.age_limit,
-            game.pre_registration,
-            game.game_zone,
-            game.game_time,
-            function (err) {
+                // Prepare statement once
+                const stmt = db.prepare(`
+                    INSERT OR IGNORE INTO games 
+                    (name, age_limit, pre_registration, game_zone, game_time) 
+                    VALUES (?, ?, ?, ?, ?)
+                `);
+
+                // Insert each game with metadata
+                games.forEach(game => {
+                    stmt.run(
+                        game.name,
+                        game.age_limit,
+                        game.pre_registration,
+                        game.game_zone,
+                        game.game_time
+                    );
+                });
+
+                // Finalize the statement
+                stmt.finalize();
+
+                // Commit the transaction
+                db.run('COMMIT', (err) => {
+                    if (err) {
+                        console.error('Error committing games transaction:', err);
+                        db.run('ROLLBACK');
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
+        });
+    };
+
+    // Execute the inserts and then verify
+    insertGamesSequentially()
+        .then(() => {
+            // Log all games in the database for verification
+            db.all('SELECT * FROM games', [], (err, rows) => {
                 if (err) {
-                    console.error(`Error inserting game "${game.name}":`, err.message);
-                } else if (this.changes > 0) {
-                    console.log(`Added game: ${game.name}`);
+                    console.error('Error querying games:', err.message);
+                } else {
+                    console.log('Games in database:', rows.length);
+                    rows.forEach(row => {
+                        console.log(`  ${row.id}: ${row.name} (${row.age_limit}, ${row.game_time})`);
+                    });
                 }
-            }
-        );
-    });
-    insertGame.finalize();
-
-    // Log all games in the database for verification
-    db.all('SELECT * FROM games', [], (err, rows) => {
-        if (err) {
-            console.error('Error querying games:', err.message);
-        } else {
-            console.log('Games in database:', rows.length);
-            rows.forEach(row => {
-                console.log(`  ${row.id}: ${row.name} (${row.age_limit}, ${row.game_zone}, ${row.game_time})`);
             });
-        }
-    });
+        })
+        .catch(err => {
+            console.error('Failed to populate games:', err);
+        });
 }
 
-// Function to get all games
-function getAllGames(callback) {
-    console.log('Fetching all games');
-    db.all('SELECT * FROM games ORDER BY name', [], (err, games) => {
-        if (err) {
-            console.error('Error fetching games:', err.message);
-            return callback(err);
-        }
-        console.log(`Found ${games.length} games`);
-        callback(null, games);
-    });
-}
-
-// Function to get a game by ID
-function getGameById(id, callback) {
-    console.log(`Fetching game with ID: ${id}`);
-    db.get('SELECT * FROM games WHERE id = ?', [id], (err, game) => {
-        if (err) {
-            console.error(`Error fetching game with ID ${id}:`, err.message);
-            return callback(err);
-        }
-        if (!game) {
-            return callback(new Error(`Game with ID ${id} not found`));
-        }
-        callback(null, game);
-    });
-}
-
-// Function to create a new game
-function createGame(game, callback) {
-    console.log('Creating new game:', game);
-    db.run(
-        `INSERT INTO games (name, age_limit, pre_registration, game_zone, game_time)
-         VALUES (?, ?, ?, ?, ?)`,
-        [
-            game.name,
-            game.ageLimit,
-            game.preRegistration,
-            game.gameZone,
-            game.gameTime
-        ],
-        function (err) {
+// Function to ensure all games exist in the database
+function ensureGamesExist(gameNames) {
+    return new Promise((resolve, reject) => {
+        // Get all games from the database
+        db.all('SELECT name FROM games', [], (err, rows) => {
             if (err) {
-                console.error('Error creating game:', err.message);
-                return callback(err);
+                return reject(new Error('Failed to check games: ' + err.message));
             }
-            const gameId = this.lastID;
-            console.log(`Game created with ID: ${gameId}`);
-            callback(null, {
-                id: gameId,
-                name: game.name,
-                age_limit: game.ageLimit,
-                pre_registration: game.preRegistration,
-                game_zone: game.gameZone,
-                game_time: game.gameTime
-            });
-        }
-    );
-}
 
-// Function to update a game
-function updateGame(id, game, callback) {
-    console.log(`Updating game with ID: ${id}`, game);
-    db.run(
-        `UPDATE games SET
-         name = ?, age_limit = ?, pre_registration = ?, game_zone = ?, game_time = ?
-         WHERE id = ?`,
-        [
-            game.name,
-            game.ageLimit,
-            game.preRegistration,
-            game.gameZone,
-            game.gameTime,
-            id
-        ],
-        function (err) {
-            if (err) {
-                console.error(`Error updating game with ID ${id}:`, err.message);
-                return callback(err);
-            }
-            if (this.changes === 0) {
-                return callback(new Error(`Game with ID ${id} not found`));
-            }
-            console.log(`Game updated with ID: ${id}`);
-            callback(null, {
-                id: parseInt(id),
-                name: game.name,
-                age_limit: game.ageLimit,
-                pre_registration: game.preRegistration,
-                game_zone: game.gameZone,
-                game_time: game.gameTime
-            });
-        }
-    );
-}
+            // Extract game names to an array
+            const existingGames = rows.map(row => row.name);
 
-// Function to delete a game
-function deleteGame(id, callback) {
-    console.log(`Deleting game with ID: ${id}`);
-    db.run('DELETE FROM games WHERE id = ?', [id], function (err) {
-        if (err) {
-            console.error(`Error deleting game with ID ${id}:`, err.message);
-            return callback(err);
-        }
-        if (this.changes === 0) {
-            return callback(new Error(`Game with ID ${id} not found`));
-        }
-        console.log(`Game deleted with ID: ${id}`);
-        callback(null, { id });
+            // Check if all selected games exist in the database
+            const missingGames = gameNames.filter(game => !existingGames.includes(game));
+
+            if (missingGames.length > 0) {
+                // Log the issue clearly
+                console.error('Missing games detected:', missingGames);
+                console.error('Games in database:', existingGames);
+
+                return reject(new Error(`One or more selected games were not found: ${missingGames.join(', ')}`));
+            }
+
+            // All games exist
+            resolve();
+        });
     });
 }
 
@@ -303,6 +246,20 @@ function registerParticipant(participant, callback) {
         return callback(new Error('At least one game must be selected'));
     }
 
+    // First, ensure all games exist in the database
+    ensureGamesExist(participant.selectedGames)
+        .then(() => {
+            // Continue with participant registration
+            registerParticipantWithGames(participant, callback);
+        })
+        .catch(err => {
+            console.error('Error ensuring games exist:', err.message);
+            callback(err);
+        });
+}
+
+// Function to register participant after games are validated
+function registerParticipantWithGames(participant, callback) {
     db.serialize(() => {
         // Begin transaction
         db.run('BEGIN TRANSACTION');
@@ -310,7 +267,7 @@ function registerParticipant(participant, callback) {
         // Insert participant
         db.run(
             `INSERT INTO participants (first_name, last_name, contact_number, age_group)
-       VALUES (?, ?, ?, ?)`,
+            VALUES (?, ?, ?, ?)`,
             [
                 participant.firstName,
                 participant.lastName,
@@ -328,93 +285,62 @@ function registerParticipant(participant, callback) {
                 console.log(`Participant inserted with ID: ${participantId}`);
 
                 // Get game IDs for selected games
-                const selectedGames = participant.selectedGames;
-
-                // Keep track of remaining game insertions
-                let pending = selectedGames.length;
-                let gameErrors = [];
-
-                // Prepare statement for participant_games insertions
-                const stmt = db.prepare('INSERT INTO participant_games (participant_id, game_id) VALUES (?, ?)');
-
-                selectedGames.forEach(gameName => {
-                    // Find the game ID by name
-                    db.get('SELECT id FROM games WHERE name = ?', [gameName], (err, game) => {
-                        if (err) {
-                            console.error(`Error finding game "${gameName}":`, err.message);
-                            gameErrors.push(err);
-                            pending--;
-
-                            if (pending === 0) {
-                                // If there were errors, rollback
-                                if (gameErrors.length > 0) {
-                                    console.error('Rolling back due to game lookup errors');
-                                    stmt.finalize();
-                                    db.run('ROLLBACK');
-                                    return callback(new Error('Error associating games with participant'));
-                                }
-                            }
-                            return;
-                        }
-
-                        if (!game) {
-                            console.error(`Game not found: ${gameName}`);
-                            gameErrors.push(new Error(`Game not found: ${gameName}`));
-                            pending--;
-
-                            if (pending === 0) {
-                                // If there were errors, rollback
-                                if (gameErrors.length > 0) {
-                                    console.error('Rolling back due to missing games');
-                                    stmt.finalize();
-                                    db.run('ROLLBACK');
-                                    return callback(new Error('One or more selected games were not found'));
-                                }
-                            }
-                            return;
-                        }
-
-                        // Insert the participant-game relationship
-                        stmt.run(participantId, game.id, (err) => {
+                const promises = participant.selectedGames.map(gameName => {
+                    return new Promise((resolve, reject) => {
+                        db.get('SELECT id FROM games WHERE name = ?', [gameName], (err, game) => {
                             if (err) {
-                                console.error(`Error inserting game association for "${gameName}":`, err.message);
-                                gameErrors.push(err);
-                            } else {
-                                console.log(`Added game "${gameName}" (ID: ${game.id}) to participant ${participantId}`);
+                                return reject(err);
                             }
-
-                            pending--;
-
-                            if (pending === 0) {
-                                stmt.finalize();
-
-                                // If there were errors, rollback
-                                if (gameErrors.length > 0) {
-                                    console.error('Rolling back due to game association errors');
-                                    db.run('ROLLBACK');
-                                    return callback(new Error('Error associating games with participant'));
-                                }
-
-                                // All went well, commit the transaction
-                                db.run('COMMIT', (err) => {
-                                    if (err) {
-                                        console.error('Error committing transaction:', err.message);
-                                        db.run('ROLLBACK');
-                                        return callback(err);
-                                    }
-
-                                    console.log(`Successfully registered participant ${participantId} with ${selectedGames.length} games`);
-
-                                    // Return the newly created participant
-                                    callback(null, {
-                                        id: participantId,
-                                        ...participant
-                                    });
-                                });
+                            if (!game) {
+                                return reject(new Error(`Game not found: ${gameName}`));
                             }
+                            resolve({ name: gameName, id: game.id });
                         });
                     });
                 });
+
+                // Process all game lookups
+                Promise.all(promises)
+                    .then(games => {
+                        // Prepare statement for participant_games insertions
+                        const stmt = db.prepare('INSERT INTO participant_games (participant_id, game_id) VALUES (?, ?)');
+
+                        // Insert all game associations
+                        games.forEach(game => {
+                            stmt.run(participantId, game.id, err => {
+                                if (err) {
+                                    console.error(`Error associating game ${game.name}:`, err.message);
+                                } else {
+                                    console.log(`Added game "${game.name}" (ID: ${game.id}) to participant ${participantId}`);
+                                }
+                            });
+                        });
+
+                        // Finalize statement
+                        stmt.finalize();
+
+                        // Commit transaction
+                        db.run('COMMIT', err => {
+                            if (err) {
+                                console.error('Error committing transaction:', err.message);
+                                db.run('ROLLBACK');
+                                return callback(err);
+                            }
+
+                            console.log(`Successfully registered participant ${participantId} with ${games.length} games`);
+
+                            // Return the newly created participant
+                            callback(null, {
+                                id: participantId,
+                                ...participant
+                            });
+                        });
+                    })
+                    .catch(err => {
+                        console.error('Error processing games:', err.message);
+                        db.run('ROLLBACK');
+                        callback(err);
+                    });
             }
         );
     });
@@ -483,13 +409,378 @@ function getAllParticipants(callback) {
     });
 }
 
+// Function to get all games with metadata
+function getAllGames(callback) {
+    console.log('Fetching all games from database');
+
+    // Check if table exists
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='games'", (err, table) => {
+        if (err) {
+            console.error('Error checking if games table exists:', err.message);
+            return callback(err);
+        }
+
+        if (!table) {
+            console.error('Games table does not exist in the database');
+            return callback(new Error('Games table does not exist'));
+        }
+
+        // Get table info to check which columns exist
+        db.all("PRAGMA table_info(games)", (err, columns) => {
+            if (err) {
+                console.error('Error getting table info:', err.message);
+                return callback(err);
+            }
+
+            console.log('Available columns in games table:', columns.map(col => col.name));
+
+            // Build the query based on existing columns
+            const hasCreatedAt = columns.some(col => col.name === 'created_at');
+            const hasUpdatedAt = columns.some(col => col.name === 'updated_at');
+
+            let query = 'SELECT id, name';
+
+            // Add other columns that should exist
+            if (columns.some(col => col.name === 'age_limit')) query += ', age_limit';
+            if (columns.some(col => col.name === 'pre_registration')) query += ', pre_registration';
+            if (columns.some(col => col.name === 'game_zone')) query += ', game_zone';
+            if (columns.some(col => col.name === 'game_time')) query += ', game_time';
+
+            // Add timestamp columns if they exist
+            if (hasCreatedAt) query += ', created_at';
+            if (hasUpdatedAt) query += ', updated_at';
+
+            query += ' FROM games ORDER BY name ASC';
+
+            console.log('Executing query:', query);
+
+            // Execute the query with only existing columns
+            db.all(query, [], (err, games) => {
+                if (err) {
+                    console.error('Error executing query to fetch games:', err.message);
+                    return callback(err);
+                }
+
+                console.log(`Found ${games ? games.length : 0} games in database`);
+
+                // If timestamp columns don't exist, add placeholder values
+                if (!hasCreatedAt || !hasUpdatedAt) {
+                    const now = new Date().toISOString();
+                    games = games.map(game => ({
+                        ...game,
+                        created_at: hasCreatedAt ? game.created_at : now,
+                        updated_at: hasUpdatedAt ? game.updated_at : now
+                    }));
+                }
+
+                // Return empty array instead of null/undefined
+                callback(null, games || []);
+            });
+        });
+    });
+}
+
+// Function to create a new game with metadata
+function createGame(gameData, callback) {
+    console.log('Creating new game:', gameData);
+
+    // Validate required fields
+    if (!gameData.name) {
+        return callback(new Error('Game name is required'));
+    }
+
+    // First check if the table has the right columns
+    db.all("PRAGMA table_info(games)", (err, columns) => {
+        if (err) {
+            console.error('Error getting table info:', err.message);
+            return callback(err);
+        }
+
+        console.log('Available columns in games table:', columns.map(col => col.name));
+
+        // Build the insert query based on available columns
+        const columnNames = columns.map(col => col.name);
+        let fields = ['name'];
+        let placeholders = ['?'];
+        let values = [gameData.name];
+
+        // Add other fields if the columns exist
+        if (columnNames.includes('age_limit')) {
+            fields.push('age_limit');
+            placeholders.push('?');
+            values.push(gameData.age_limit || 'All Ages');
+        }
+
+        if (columnNames.includes('pre_registration')) {
+            fields.push('pre_registration');
+            placeholders.push('?');
+            values.push(gameData.pre_registration || 'N');
+        }
+
+        if (columnNames.includes('game_zone')) {
+            fields.push('game_zone');
+            placeholders.push('?');
+            values.push(gameData.game_zone || '');
+        }
+
+        if (columnNames.includes('game_time')) {
+            fields.push('game_time');
+            placeholders.push('?');
+            values.push(gameData.game_time || '');
+        }
+
+        // Build and execute the dynamic insert query
+        const insertQuery = `
+            INSERT INTO games (${fields.join(', ')}) 
+            VALUES (${placeholders.join(', ')})
+        `;
+
+        console.log('Executing insert query:', insertQuery);
+        console.log('With values:', values);
+
+        db.run(insertQuery, values, function (err) {
+            if (err) {
+                console.error('Error creating game:', err.message);
+
+                // Check for UNIQUE constraint violation
+                if (err.message.includes('UNIQUE constraint failed')) {
+                    return callback(new Error('A game with this name already exists'));
+                }
+
+                return callback(err);
+            }
+
+            const gameId = this.lastID;
+            console.log(`Game created with ID: ${gameId}`);
+
+            // Build the select query to match our insert fields
+            let selectQuery = 'SELECT id, name';
+            for (const field of ['age_limit', 'pre_registration', 'game_zone', 'game_time']) {
+                if (columnNames.includes(field)) {
+                    selectQuery += `, ${field}`;
+                }
+            }
+            if (columnNames.includes('created_at')) selectQuery += ', created_at';
+            if (columnNames.includes('updated_at')) selectQuery += ', updated_at';
+            selectQuery += ' FROM games WHERE id = ?';
+
+            console.log('Executing select query:', selectQuery);
+
+            // Get the newly created game with available columns
+            db.get(selectQuery, [gameId], (err, game) => {
+                if (err) {
+                    console.error(`Error fetching created game with ID ${gameId}:`, err.message);
+
+                    // Instead of returning an error, return the basic game data we already have
+                    const now = new Date().toISOString();
+                    return callback(null, {
+                        id: gameId,
+                        name: gameData.name,
+                        age_limit: gameData.age_limit || 'All Ages',
+                        pre_registration: gameData.pre_registration || 'N',
+                        game_zone: gameData.game_zone || '',
+                        game_time: gameData.game_time || '',
+                        created_at: now,
+                        updated_at: now
+                    });
+                }
+
+                if (!game) {
+                    console.error(`Game with ID ${gameId} not found after creation`);
+
+                    // Instead of returning an error, return the basic game data we already have
+                    const now = new Date().toISOString();
+                    return callback(null, {
+                        id: gameId,
+                        name: gameData.name,
+                        age_limit: gameData.age_limit || 'All Ages',
+                        pre_registration: gameData.pre_registration || 'N',
+                        game_zone: gameData.game_zone || '',
+                        game_time: gameData.game_time || '',
+                        created_at: now,
+                        updated_at: now
+                    });
+                }
+
+                // Add any missing fields with default values
+                if (!columnNames.includes('created_at')) game.created_at = new Date().toISOString();
+                if (!columnNames.includes('updated_at')) game.updated_at = new Date().toISOString();
+                if (!columnNames.includes('age_limit')) game.age_limit = gameData.age_limit || 'All Ages';
+                if (!columnNames.includes('pre_registration')) game.pre_registration = gameData.pre_registration || 'N';
+                if (!columnNames.includes('game_zone')) game.game_zone = gameData.game_zone || '';
+                if (!columnNames.includes('game_time')) game.game_time = gameData.game_time || '';
+
+                console.log('Game created successfully:', game);
+                callback(null, game);
+            });
+        });
+    });
+}
+
+// Function to update an existing game
+function updateGame(gameId, gameData, callback) {
+    console.log(`Updating game ${gameId}:`, gameData);
+
+    // Validate game ID
+    if (!gameId) {
+        return callback(new Error('Game ID is required'));
+    }
+
+    // Validate at least one field to update
+    if (!gameData.name && !gameData.age_limit &&
+        !gameData.pre_registration && !gameData.game_zone &&
+        !gameData.game_time) {
+        return callback(new Error('At least one field to update is required'));
+    }
+
+    // Check if the game exists
+    db.get('SELECT id FROM games WHERE id = ?', [gameId], (err, game) => {
+        if (err) {
+            console.error('Error checking game existence:', err.message);
+            return callback(err);
+        }
+
+        if (!game) {
+            return callback(new Error('Game not found'));
+        }
+
+        // Build the update query dynamically based on provided fields
+        const updates = [];
+        const values = [];
+
+        if (gameData.name) {
+            updates.push('name = ?');
+            values.push(gameData.name);
+        }
+
+        if (gameData.age_limit) {
+            updates.push('age_limit = ?');
+            values.push(gameData.age_limit);
+        }
+
+        if (gameData.pre_registration) {
+            updates.push('pre_registration = ?');
+            values.push(gameData.pre_registration);
+        }
+
+        if (gameData.game_zone) {
+            updates.push('game_zone = ?');
+            values.push(gameData.game_zone);
+        }
+
+        if (gameData.game_time) {
+            updates.push('game_time = ?');
+            values.push(gameData.game_time);
+        }
+
+        // Add updated_at timestamp
+        updates.push('updated_at = CURRENT_TIMESTAMP');
+
+        // Add the game ID to values array
+        values.push(gameId);
+
+        // Execute the update
+        db.run(`
+            UPDATE games 
+            SET ${updates.join(', ')} 
+            WHERE id = ?
+        `, values, function (err) {
+            if (err) {
+                console.error('Error updating game:', err.message);
+
+                // Check for UNIQUE constraint violation
+                if (err.message.includes('UNIQUE constraint failed')) {
+                    return callback(new Error('A game with this name already exists'));
+                }
+
+                return callback(err);
+            }
+
+            if (this.changes === 0) {
+                return callback(new Error('Game not found or no changes made'));
+            }
+
+            // Get the updated game
+            db.get(`
+                SELECT 
+                    id, 
+                    name, 
+                    age_limit, 
+                    pre_registration, 
+                    game_zone, 
+                    game_time,
+                    created_at,
+                    updated_at
+                FROM games 
+                WHERE id = ?
+            `, [gameId], (err, game) => {
+                if (err) {
+                    console.error('Error fetching updated game:', err.message);
+                    return callback(new Error('Game updated but failed to retrieve details'));
+                }
+
+                console.log('Game updated successfully:', game);
+                callback(null, game);
+            });
+        });
+    });
+}
+
+// Function to delete a game
+function deleteGame(gameId, callback) {
+    console.log(`Deleting game ${gameId}`);
+
+    // Validate game ID
+    if (!gameId) {
+        return callback(new Error('Game ID is required'));
+    }
+
+    // Check if the game exists
+    db.get('SELECT id FROM games WHERE id = ?', [gameId], (err, game) => {
+        if (err) {
+            console.error('Error checking game existence:', err.message);
+            return callback(err);
+        }
+
+        if (!game) {
+            return callback(new Error('Game not found'));
+        }
+
+        // First check if game is associated with any participants
+        db.get('SELECT COUNT(*) as count FROM participant_games WHERE game_id = ?', [gameId], (err, result) => {
+            if (err) {
+                console.error('Error checking game associations:', err.message);
+                return callback(err);
+            }
+
+            if (result.count > 0) {
+                return callback(new Error(`Cannot delete game as it is associated with ${result.count} participants`));
+            }
+
+            // Delete the game
+            db.run('DELETE FROM games WHERE id = ?', [gameId], function (err) {
+                if (err) {
+                    console.error('Error deleting game:', err.message);
+                    return callback(err);
+                }
+
+                if (this.changes === 0) {
+                    return callback(new Error('Game not found or no changes made'));
+                }
+
+                console.log(`Game ${gameId} deleted successfully`);
+                callback(null, { id: gameId, message: 'Game deleted successfully' });
+            });
+        });
+    });
+}
+
 // Export functions and database connection
 module.exports = {
     db,
     registerParticipant,
     getAllParticipants,
     getAllGames,
-    getGameById,
     createGame,
     updateGame,
     deleteGame
