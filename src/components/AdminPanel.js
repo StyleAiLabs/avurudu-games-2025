@@ -82,6 +82,7 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
 
     // Format date for display
     const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
             year: 'numeric',
@@ -94,12 +95,39 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
 
     // Filter participants based on search term and age group
     const filteredParticipants = participants.filter(participant => {
-        const matchesSearch =
-            (participant.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-            (participant.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-            (participant.contactNumber?.includes(searchTerm) || false);
+        // First ensure the participant is a valid object
+        if (!participant || typeof participant !== 'object') {
+            console.log('Invalid participant object:', participant);
+            return false;
+        }
 
-        const matchesAgeGroup = filterAgeGroup === '' || participant.ageGroup === filterAgeGroup;
+        // Check if firstName/first_name exists before using toLowerCase
+        const firstNameMatch =
+            (participant.firstName && searchTerm ?
+                participant.firstName.toLowerCase().includes(searchTerm.toLowerCase()) : false) ||
+            (participant.first_name && searchTerm ?
+                participant.first_name.toLowerCase().includes(searchTerm.toLowerCase()) : false);
+
+        // Check if lastName/last_name exists before using toLowerCase
+        const lastNameMatch =
+            (participant.lastName && searchTerm ?
+                participant.lastName.toLowerCase().includes(searchTerm.toLowerCase()) : false) ||
+            (participant.last_name && searchTerm ?
+                participant.last_name.toLowerCase().includes(searchTerm.toLowerCase()) : false);
+
+        // Check if contactNumber/contact_number exists
+        const contactMatch =
+            (participant.contactNumber && searchTerm ?
+                participant.contactNumber.includes(searchTerm) : false) ||
+            (participant.contact_number && searchTerm ?
+                participant.contact_number.includes(searchTerm) : false);
+
+        const matchesSearch = !searchTerm || firstNameMatch || lastNameMatch || contactMatch;
+
+        // Check age group match, supporting both camelCase and snake_case
+        const matchesAgeGroup = !filterAgeGroup ||
+            participant.ageGroup === filterAgeGroup ||
+            participant.age_group === filterAgeGroup;
 
         return matchesSearch && matchesAgeGroup;
     });
@@ -113,12 +141,12 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
         filteredParticipants.forEach(participant => {
             const row = [
                 participant.id,
-                participant.first_name,
-                participant.last_name,
-                participant.contact_number,
-                participant.age_group,
-                participant.registration_date,
-                participant.games ? participant.games.join(', ') : ''
+                participant.firstName || participant.first_name || '',
+                participant.lastName || participant.last_name || '',
+                participant.contactNumber || participant.contact_number || '',
+                participant.ageGroup || participant.age_group || '',
+                participant.registrationDate || participant.registration_date || '',
+                (participant.games && Array.isArray(participant.games)) ? participant.games.join(', ') : ''
             ];
             csvRows.push(row);
         });
@@ -173,6 +201,9 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
             </div>
         );
     }
+
+    console.log('About to render. Total participants:', participants.length);
+    console.log('Filtered participants:', filteredParticipants.length);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 py-8">
@@ -271,7 +302,14 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
                                 <div className="overflow-x-auto bg-white shadow-md rounded-lg">
                                     {filteredParticipants.length === 0 ? (
                                         <div className="text-center py-10">
-                                            <p className="text-gray-500">No participants found matching your search criteria.</p>
+                                            <p className="text-gray-500">
+                                                {participants.length === 0
+                                                    ? "No participants registered yet."
+                                                    : "No participants found matching your search criteria."}
+                                            </p>
+                                            <p className="mt-2 text-sm text-gray-400">
+                                                Total participants in database: {participants.length}
+                                            </p>
                                         </div>
                                     ) : (
                                         <table className="min-w-full divide-y divide-gray-200">
@@ -304,7 +342,7 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
                                                                 </div>
                                                                 <div className="ml-4">
                                                                     <div className="text-sm font-medium text-gray-900">
-                                                                        {participant.first_name} {participant.last_name}
+                                                                        {participant.firstName || participant.first_name} {participant.lastName || participant.last_name}
                                                                     </div>
                                                                     <div className="text-sm text-gray-500">
                                                                         ID: {participant.id}
@@ -315,12 +353,12 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="flex items-center">
                                                                 <Phone className="h-4 w-4 text-gray-400 mr-2" />
-                                                                <span className="text-sm text-gray-500">{participant.contact_number}</span>
+                                                                <span className="text-sm text-gray-500">{participant.contactNumber || participant.contact_number}</span>
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <span className="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                                {participant.age_group}
+                                                                {participant.ageGroup || participant.age_group}
                                                             </span>
                                                         </td>
                                                         <td className="px-6 py-4">
@@ -337,7 +375,7 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                             <div className="flex items-center">
                                                                 <Calendar className="h-4 w-4 text-gray-400 mr-2" />
-                                                                {formatDate(participant.registration_date)}
+                                                                {formatDate(participant.registrationDate || participant.registration_date)}
                                                             </div>
                                                         </td>
                                                     </tr>
