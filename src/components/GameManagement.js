@@ -251,18 +251,36 @@ const GameManagement = ({ authCredentials }) => {
         setSuccessMessage(null);
 
         try {
+            // Log the authentication attempt
+            console.log('Attempting to delete game with auth credentials:',
+                authCredentials.username ? 'Username provided' : 'No username',
+                authCredentials.password ? 'Password provided' : 'No password'
+            );
+
+            // Create the auth header exactly as it works in other requests
+            const authHeader = 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`);
+            console.log('Auth header (first part):', authHeader.substring(0, 10) + '...');
+
             const response = await fetch(`${config.apiUrl}/api/admin/games/${gameId}`, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}: ${authCredentials.password}`)
+                    'Authorization': authHeader
                 }
             });
 
-            const data = await response.json();
+            console.log('Delete response status:', response.status);
+
+            // Add special handling for 401 unauthorized
+            if (response.status === 401) {
+                throw new Error('Authentication failed. Please log out and log in again.');
+            }
 
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to delete game');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Failed to delete game (${response.status})`);
             }
+
+            const data = await response.json();
 
             // Remove the game from the list
             setGames(games.filter(game => game.id !== gameId));
