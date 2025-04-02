@@ -74,10 +74,10 @@ const corsOptions = {
     allowedHeaders: "Origin,X-Requested-With,Content-Type,Accept,Authorization"
 };
 
-app.use(cors(corsOptions));
+//app.use(cors(corsOptions));
 
 // Enable pre-flight requests for all routes
-app.options('*', cors(corsOptions));
+//app.options('*', cors(corsOptions));
 
 app.use(bodyParser.json());
 

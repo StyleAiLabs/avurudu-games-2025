@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, User, Calendar, Phone, Filter, Download, Printer, RefreshCw, LogOut } from 'lucide-react';
 import GameManagement from './GameManagement';
+import config from '../config';
 
 const AdminPanel = ({ authCredentials, onLogout }) => {
     const [participants, setParticipants] = useState([]);
@@ -27,7 +28,7 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
         setError(null);
 
         try {
-            const response = await fetch('/api/admin/participants', {
+            const response = await fetch(`${config.apiUrl}/api/admin/participants`, {
                 headers: {
                     'Authorization': 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`)
                 }
