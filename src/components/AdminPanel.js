@@ -84,6 +84,9 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
 
     // Filter participants based on search term and age group
     const filteredParticipants = participants.filter(participant => {
+
+        if (!participant || typeof participant !== 'object') return false;
+
         const matchesSearch =
             participant.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             participant.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
