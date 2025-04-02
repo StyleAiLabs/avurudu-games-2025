@@ -1,0 +1,21 @@
+{
+	"siteId": "144c5087-7f70-46d3-a390-923cdfd154a9",
+	"geolocation": {
+		"data": {
+			"city": "Auckland",
+			"country": {
+				"code": "NZ",
+				"name": "New Zealand"
+			},
+			"subdivision": {
+				"code": "AUK",
+				"name": "Auckland"
+			},
+			"timezone": "Pacific/Auckland",
+			"latitude": -36.8504,
+			"longitude": 174.7675,
+			"postalCode": "1010"
+		},
+		"timestamp": 1743542826841
+	}
+}
