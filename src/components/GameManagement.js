@@ -130,25 +130,38 @@ const GameManagement = ({ authCredentials }) => {
         setSuccessMessage(null);
 
         try {
+            console.log('Attempting to create game with auth:',
+                authCredentials.username,
+                authCredentials.password ? '(password provided)' : '(no password)'
+            );
+
+            // Create authorization header exactly as it works in Postman
+            const authHeader = 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`);
+            console.log('Auth header (first few chars):', authHeader.substring(0, 10) + '...');
+
             const response = await fetch(`${config.apiUrl}/api/admin/games`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}: ${authCredentials.password}`)
+                    'Authorization': authHeader
                 },
                 body: JSON.stringify(newGame)
             });
 
-            const data = await response.json();
+            console.log('Response status:', response.status);
+
+            // Check for authentication errors specifically
+            if (response.status === 401) {
+                throw new Error('Authentication failed. Please log out and log in again.');
+            }
 
             if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
                 throw new Error(data.error || 'Failed to create game');
             }
 
-            // Add the new game to the list
+            const data = await response.json();
             setGames([...games, data]);
-
-            // Reset form and hide it
             setNewGame({
                 name: '',
                 age_limit: 'All Ages',
@@ -157,9 +170,11 @@ const GameManagement = ({ authCredentials }) => {
                 game_time: ''
             });
             setShowNewGameForm(false);
-
-            // Show success message
             setSuccessMessage('Game created successfully!');
+
+            // Log out the success
+            console.log('Game created successfully:', data);
+
             setTimeout(() => setSuccessMessage(null), 3000);
         } catch (error) {
             console.error('Error creating game:', error);
