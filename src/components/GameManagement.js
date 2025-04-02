@@ -210,14 +210,23 @@ const GameManagement = ({ authCredentials }) => {
         setSuccessMessage(null);
 
         try {
+            // Fixed: Removed space after colon in credentials
             const response = await fetch(`${config.apiUrl}/api/admin/games/${gameId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}: ${authCredentials.password}`)
+                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`)
                 },
                 body: JSON.stringify(editingGame)
             });
+
+            // Add logging to help debug
+            console.log('Update response status:', response.status);
+
+            // Check for specific authentication errors
+            if (response.status === 401) {
+                throw new Error('Authentication failed. Please check your credentials.');
+            }
 
             const data = await response.json();
 
