@@ -93,10 +93,11 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
 
         if (!participant || typeof participant !== 'object') return false;
 
+        // Replace the matchesSearch logic in your AdminPanel.js (lines 96-99)
         const matchesSearch =
-            participant.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            participant.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            participant.contact_number.includes(searchTerm);
+            (participant.first_name ? participant.first_name.toLowerCase().includes(searchTerm.toLowerCase()) : false) ||
+            (participant.last_name ? participant.last_name.toLowerCase().includes(searchTerm.toLowerCase()) : false) ||
+            (participant.contact_number ? participant.contact_number.includes(searchTerm) : false);
 
         const matchesAgeGroup = filterAgeGroup === '' || participant.age_group === filterAgeGroup;
 
