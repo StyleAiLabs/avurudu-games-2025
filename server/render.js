@@ -57,11 +57,27 @@ const basicAuth = (req, res, next) => {
     }
 };
 
-// CORS middleware with specific origins for production
-app.use(cors({
-    origin: ['https://avurudu-kreeda.netlify.app', 'http://localhost:3000'],
-    credentials: true
-}));
+// Updated CORS configuration
+const corsOptions = {
+    origin: function (origin, callback) {
+        const allowedOrigins = ['https://avurudu-kreeda.netlify.app', 'http://localhost:3000'];
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log('CORS blocked for origin:', origin);
+            callback(null, false);
+        }
+    },
+    credentials: true,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+    allowedHeaders: "Origin,X-Requested-With,Content-Type,Accept,Authorization"
+};
+
+app.use(cors(corsOptions));
+
+// Enable pre-flight requests for all routes
+app.options('*', cors(corsOptions));
 
 app.use(bodyParser.json());
 
