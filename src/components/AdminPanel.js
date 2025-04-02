@@ -28,31 +28,29 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
         setError(null);
 
         try {
+            console.log('Attempt to fetch participants with:', authCredentials);
+
+            // Create the exact same auth header that works in Postman
+            const authHeader = 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`);
+            console.log('Auth header (censored):', authHeader.substring(0, 10) + '...');
+
             const response = await fetch(`${config.apiUrl}/api/admin/participants`, {
                 headers: {
-                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`)
+                    'Authorization': authHeader
                 }
             });
 
+            console.log('Response status:', response.status);
+
+            // Handle the response
             if (!response.ok) {
-                if (response.status === 401) {
-                    // If authentication fails, log out
-                    onLogout();
-                    throw new Error('Your session has expired. Please log in again.');
-                }
-                throw new Error('Failed to fetch participants');
+                throw new Error(`Failed to fetch participants (${response.status})`);
             }
 
             const data = await response.json();
-            // Add null checks before using data
-            if (Array.isArray(data)) {
-                setParticipants(data);
-            } else {
-                console.error('Unexpected response format:', data);
-                setParticipants([]);
-            }
+            setParticipants(data);
         } catch (error) {
-            console.error('Error fetching participants:', error);
+            console.error('Error in fetchParticipants:', error);
             setError(error.message);
         } finally {
             setLoading(false);
