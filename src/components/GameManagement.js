@@ -355,8 +355,8 @@ const GameManagement = ({ authCredentials }) => {
                                 name="name"
                                 value={newGame.name}
                                 onChange={handleNewGameInputChange}
-                                className={`mt - 1 block w - full rounded - md shadow - sm py - 2 px - 3 border ${formErrors.name ? 'border-red-300' : 'border-gray-300'
-                                    } focus: outline - none focus: ring - orange - 500 focus: border - orange - 500`}
+                                className="mt-1 block w-full rounded-md shadow-sm py-2 px-3 border border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                                placeholder="Enter game name"
                             />
                             {formErrors.name && (
                                 <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
