@@ -4,6 +4,7 @@ import {
     Plus, Edit, Trash2, Save, X, AlertCircle, Check,
     RefreshCw, Clock, MapPin, Users, CalendarCheck
 } from 'lucide-react';
+import config from '../config';
 
 const GameManagement = ({ authCredentials }) => {
     const [games, setGames] = useState([]);
@@ -40,7 +41,7 @@ const GameManagement = ({ authCredentials }) => {
         try {
             console.log('Fetching games with credentials:', authCredentials.username);
 
-            const response = await fetch('/api/admin/games', {
+            const response = await fetch(`${config.apiUrl}/api/admin/games`, {
                 headers: {
                     'Authorization': 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`)
                 }
@@ -129,11 +130,11 @@ const GameManagement = ({ authCredentials }) => {
         setSuccessMessage(null);
 
         try {
-            const response = await fetch('/api/admin/games', {
+            const response = await fetch(`${config.apiUrl}/api/admin/games`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`)
+                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}: ${authCredentials.password}`)
                 },
                 body: JSON.stringify(newGame)
             });
@@ -194,11 +195,11 @@ const GameManagement = ({ authCredentials }) => {
         setSuccessMessage(null);
 
         try {
-            const response = await fetch(`/api/admin/games/${gameId}`, {
+            const response = await fetch(`${config.apiUrl}api/admin/games/${gameId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`)
+                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}: ${authCredentials.password}`)
                 },
                 body: JSON.stringify(editingGame)
             });
@@ -235,10 +236,10 @@ const GameManagement = ({ authCredentials }) => {
         setSuccessMessage(null);
 
         try {
-            const response = await fetch(`/api/admin/games/${gameId}`, {
+            const response = await fetch(`${config.apiUrl}api/admin/games/${gameId}`, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`)
+                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}: ${authCredentials.password}`)
                 }
             });
 
@@ -285,7 +286,7 @@ const GameManagement = ({ authCredentials }) => {
                             title="Refresh"
                             disabled={loading}
                         >
-                            <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin text-orange-500' : ''}`} />
+                            <RefreshCw className={`h - 5 w - 5 ${loading ? 'animate-spin text-orange-500' : ''}`} />
                         </button>
                         <button
                             onClick={() => setShowNewGameForm(!showNewGameForm)}
@@ -339,8 +340,8 @@ const GameManagement = ({ authCredentials }) => {
                                 name="name"
                                 value={newGame.name}
                                 onChange={handleNewGameInputChange}
-                                className={`mt-1 block w-full rounded-md shadow-sm py-2 px-3 border ${formErrors.name ? 'border-red-300' : 'border-gray-300'
-                                    } focus:outline-none focus:ring-orange-500 focus:border-orange-500`}
+                                className={`mt - 1 block w - full rounded - md shadow - sm py - 2 px - 3 border ${formErrors.name ? 'border-red-300' : 'border-gray-300'
+                                    } focus: outline - none focus: ring - orange - 500 focus: border - orange - 500`}
                             />
                             {formErrors.name && (
                                 <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
@@ -475,8 +476,8 @@ const GameManagement = ({ authCredentials }) => {
                                                         name="name"
                                                         value={editingGame.name}
                                                         onChange={handleEditInputChange}
-                                                        className={`block w-full rounded-md shadow-sm py-2 px-3 border ${formErrors.name ? 'border-red-300' : 'border-gray-300'
-                                                            } focus:outline-none focus:ring-orange-500 focus:border-orange-500`}
+                                                        className={`block w - full rounded - md shadow - sm py - 2 px - 3 border ${formErrors.name ? 'border-red-300' : 'border-gray-300'
+                                                            } focus: outline - none focus: ring - orange - 500 focus: border - orange - 500`}
                                                     />
                                                     {formErrors.name && (
                                                         <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
@@ -558,7 +559,7 @@ const GameManagement = ({ authCredentials }) => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${game.pre_registration === 'Y'
+                                                    <span className={`px - 2 inline - flex text - xs leading - 5 font - semibold rounded - full ${game.pre_registration === 'Y'
                                                         ? 'bg-green-100 text-green-800'
                                                         : 'bg-gray-100 text-gray-800'
                                                         }`}>
