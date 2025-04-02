@@ -44,7 +44,13 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
             }
 
             const data = await response.json();
-            setParticipants(data);
+            // Add null checks before using data
+            if (Array.isArray(data)) {
+                setParticipants(data);
+            } else {
+                console.error('Unexpected response format:', data);
+                setParticipants([]);
+            }
         } catch (error) {
             console.error('Error fetching participants:', error);
             setError(error.message);
