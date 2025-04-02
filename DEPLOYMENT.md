@@ -45,8 +45,8 @@ Before starting the deployment process, ensure you have:
 4. Configure your service:
    - **Name**: `avurudu-games-api` (or your preferred name)
    - **Environment**: Node
-   - **Build Command**: `npm install`
-   - **Start Command**: `node server/server-pg.js`
+   - **Build Command**: `npm install && npm run build`
+   - **Start Command**: `node server/render.js`
    - **Environment Variables**:
      - `NODE_ENV`: `production`
      - `DATABASE_URL`: `postgresql://avurudu_games_user:1e5l4MU7PGHsmgG4J5zByhPG1JO4GPWZ@dpg-cvm8jcngi27c7399r9vg-a/avurudu_games`

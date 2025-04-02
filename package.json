@@ -23,6 +23,7 @@
   "scripts": {
     "start": "node server/server.js",
     "start-pg": "node server/server-pg.js",
+    "start-render": "node server/render.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",

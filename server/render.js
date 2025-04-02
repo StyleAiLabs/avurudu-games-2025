@@ -1,8 +1,9 @@
-// server/server-pg.js - Updated with PostgreSQL database connection
+// server/render.js - Special entry point for Render deployment
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const fs = require('fs');
 const {
     initDatabase,
     registerParticipant,
@@ -16,7 +17,7 @@ const {
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Admin credentials - made constants at the top for easy access
+// Admin credentials
 const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD = 'pass@123';
 
@@ -58,22 +59,50 @@ const basicAuth = (req, res, next) => {
 
 // CORS middleware with specific origins for production
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production'
-        ? ['https://avurudu-kreeda.netlify.app', 'http://localhost:3000']
-        : '*',
+    origin: ['https://avurudu-kreeda.netlify.app', 'http://localhost:3000'],
     credentials: true
 }));
+
 app.use(bodyParser.json());
 
-// Serve static files from the React app in production
-if (process.env.NODE_ENV === 'production') {
-    // Log the static file directory to help with debugging
-    const staticPath = path.join(__dirname, '../build');
-    console.log(`Serving static files from: ${staticPath}`);
-    console.log(`Current directory: ${__dirname}`);
-    console.log(`Files in static directory:`, require('fs').readdirSync(staticPath, { withFileTypes: true }).map(item => item.name));
+// Log critical environment information for debugging
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('Current directory:', __dirname);
+console.log('Parent directory:', path.resolve(__dirname, '..'));
+console.log('Possible build paths:');
+[
+    path.join(__dirname, '../build'),
+    path.join(process.cwd(), 'build'),
+    '/opt/render/project/src/build'
+].forEach(p => {
+    console.log(`- ${p} (exists: ${fs.existsSync(p)})`);
+    if (fs.existsSync(p)) {
+        try {
+            console.log(`  Contents: ${fs.readdirSync(p).join(', ')}`);
+        } catch (e) {
+            console.log(`  Error reading directory: ${e.message}`);
+        }
+    }
+});
 
-    app.use(express.static(staticPath));
+// Determine the correct build path for Render
+let buildPath = path.join(__dirname, '../build'); // Default path
+if (process.env.NODE_ENV === 'production') {
+    // Check Render's specific path
+    if (fs.existsSync('/opt/render/project/src/build')) {
+        buildPath = '/opt/render/project/src/build';
+        console.log('Using Render-specific build path');
+    } else {
+        console.log('Using default build path (not found in Render location)');
+    }
+}
+
+// Serve static files with error handling
+console.log(`Attempting to serve static files from: ${buildPath}`);
+try {
+    app.use(express.static(buildPath));
+} catch (error) {
+    console.error('Error serving static files:', error);
 }
 
 // Log incoming requests
@@ -285,10 +314,33 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
+// SPA catchall handler with error handling
 if (process.env.NODE_ENV === 'production') {
     app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../build/index.html'));
+        try {
+            const indexPath = path.join(buildPath, 'index.html');
+            console.log(`Attempting to serve SPA from: ${indexPath} (exists: ${fs.existsSync(indexPath)})`);
+
+            if (fs.existsSync(indexPath)) {
+                res.sendFile(indexPath);
+            } else {
+                // Fallback response if index.html doesn't exist
+                res.status(200).send(`
+                    <html>
+                        <head><title>Avurudu API Server</title></head>
+                        <body>
+                            <h1>Avurudu Games API Server</h1>
+                            <p>This is the API server for the Avurudu Games application.</p>
+                            <p>The frontend is hosted at: <a href="https://avurudu-kreeda.netlify.app">https://avurudu-kreeda.netlify.app</a></p>
+                            <p>Health check: <a href="/api/health">/api/health</a></p>
+                        </body>
+                    </html>
+                `);
+            }
+        } catch (err) {
+            console.error('Error serving index.html:', err);
+            res.status(500).send('Server error');
+        }
     });
 }
 
@@ -304,4 +356,5 @@ app.listen(PORT, () => {
     console.log(`API endpoints available at http://localhost:${PORT}/api/`);
     console.log(`Admin endpoint available at http://localhost:${PORT}/api/admin/participants (protected)`);
     console.log(`Admin credentials: ${ADMIN_USERNAME} / ${ADMIN_PASSWORD}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
