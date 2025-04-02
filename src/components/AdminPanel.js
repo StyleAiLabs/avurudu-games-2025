@@ -28,29 +28,35 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
         setError(null);
 
         try {
-            console.log('Attempt to fetch participants with:', authCredentials);
-
-            // Create the exact same auth header that works in Postman
-            const authHeader = 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`);
-            console.log('Auth header (censored):', authHeader.substring(0, 10) + '...');
-
+            console.log('Fetching participants with auth...');
             const response = await fetch(`${config.apiUrl}/api/admin/participants`, {
                 headers: {
-                    'Authorization': authHeader
+                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`)
                 }
             });
 
-            console.log('Response status:', response.status);
-
-            // Handle the response
             if (!response.ok) {
-                throw new Error(`Failed to fetch participants (${response.status})`);
+                if (response.status === 401) {
+                    onLogout();
+                    throw new Error('Your session has expired. Please log in again.');
+                }
+                throw new Error('Failed to fetch participants');
             }
 
             const data = await response.json();
-            setParticipants(data);
+            console.log('Participants data received:', data);
+            console.log('Data type:', typeof data, Array.isArray(data) ? 'Array' : 'Not an array');
+
+            // Make sure the data is in the expected format
+            if (Array.isArray(data)) {
+                setParticipants(data);
+                console.log('Updated participants state with', data.length, 'participants');
+            } else {
+                console.error('Data is not an array as expected:', data);
+                setParticipants([]);
+            }
         } catch (error) {
-            console.error('Error in fetchParticipants:', error);
+            console.error('Error fetching participants:', error);
             setError(error.message);
         } finally {
             setLoading(false);
