@@ -210,7 +210,7 @@ const GameManagement = ({ authCredentials }) => {
         setSuccessMessage(null);
 
         try {
-            const response = await fetch(`${config.apiUrl}api/admin/games/${gameId}`, {
+            const response = await fetch(`${config.apiUrl}/api/admin/games/${gameId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -251,7 +251,7 @@ const GameManagement = ({ authCredentials }) => {
         setSuccessMessage(null);
 
         try {
-            const response = await fetch(`${config.apiUrl}api/admin/games/${gameId}`, {
+            const response = await fetch(`${config.apiUrl}/api/admin/games/${gameId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': 'Basic ' + btoa(`${authCredentials.username}: ${authCredentials.password}`)
