@@ -1,6 +1,7 @@
 // src/components/RegistrationForm.js
 import React, { useState, useEffect } from 'react';
 import { Check, AlertCircle, ChevronDown, User, Phone, Clock, MapPin, Users, Info } from 'lucide-react';
+import config from '../config';
 
 // Define the age groups
 const ageGroups = [
@@ -36,8 +37,10 @@ const RegistrationForm = () => {
             setLoadingGames(true);
             setGamesError(null);
 
+            console.log('Using API URL:', config.apiUrl);
+
             try {
-                const response = await fetch('/api/games');
+                const response = await fetch(`${config.apiUrl}/api/games`);
 
                 if (!response.ok) {
                     throw new Error('Failed to fetch games');
@@ -136,7 +139,7 @@ const RegistrationForm = () => {
 
         try {
             // Send data to the server
-            const response = await fetch('/api/register', {
+            const response = await fetch(`${config.apiUrl}/api/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

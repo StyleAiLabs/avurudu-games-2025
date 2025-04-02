@@ -1,6 +1,7 @@
 // src/components/AdminLogin.js
 import React, { useState } from 'react';
 import { User, Lock, Shield } from 'lucide-react';
+import config from '../config';
 
 const AdminLogin = ({ onLogin }) => {
     const [credentials, setCredentials] = useState({
@@ -29,7 +30,7 @@ const AdminLogin = ({ onLogin }) => {
             console.log('Attempting login with:', credentials);
 
             // Try a simpler test endpoint first
-            const response = await fetch('/api/admin/auth-test', {
+            const response = await fetch(`${config.apiUrl}/api/admin/auth-test`, {
                 headers: {
                     'Authorization': 'Basic ' + btoa(`${credentials.username}:${credentials.password}`)
                 }
