@@ -1,6 +1,6 @@
 // src/components/AdminPanel.js
 import React, { useState, useEffect } from 'react';
-import { Search, User, Calendar, Phone, Filter, Download, Printer, RefreshCw, LogOut } from 'lucide-react';
+import { Search, User, Calendar, Phone, Filter, Download, Printer, RefreshCw, LogOut, Gamepad, RotateCcw } from 'lucide-react';
 import GameManagement from './GameManagement';
 import config from '../config';
 
@@ -11,6 +11,7 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterAgeGroup, setFilterAgeGroup] = useState('');
     const [activeTab, setActiveTab] = useState('participants'); // 'participants' or 'games'
+    const [filterGame, setFilterGame] = useState('');
 
     const ageGroups = [
         'Under 5',
@@ -171,6 +172,13 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
         window.print();
     };
 
+    // Add this after other function declarations
+    const resetFilters = () => {
+        setSearchTerm('');
+        setFilterGame('');
+        setFilterAgeGroup('');
+    };
+
     // Render loading state
     if (loading && participants.length === 0 && activeTab === 'participants') {
         return (
@@ -266,7 +274,33 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
                                         <div className="absolute inset-0 rounded-md pointer-events-none ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-orange-500" aria-hidden="true"></div>
                                     </div>
 
-                                    <div className="sm:w-64">
+                                    {/* Add game filter */}
+                                    <div className="sm:w-48">
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <Gamepad className="h-5 w-5 text-gray-400" />
+                                            </div>
+                                            <select
+                                                className="appearance-none pl-10 pr-8 py-3 block w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 bg-white text-gray-900 sm:text-sm"
+                                                value={filterGame}
+                                                onChange={(e) => setFilterGame(e.target.value)}
+                                            >
+                                                <option value="">All Games</option>
+                                                {Array.from(new Set(participants.flatMap(p => p.games || []))).sort().map(game => (
+                                                    <option key={game} value={game}>
+                                                        {game}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                                                <Filter className="h-5 w-5" />
+                                            </div>
+                                            <div className="absolute inset-0 rounded-md pointer-events-none ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-orange-500" aria-hidden="true"></div>
+
+                                        </div>
+                                    </div>
+
+                                    <div className="sm:w-48">
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <Filter className="h-5 w-5 text-gray-400" />
@@ -291,12 +325,22 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
                                     </div>
 
                                     <button
-                                        onClick={fetchParticipants}
+                                        onClick={resetFilters}
                                         className="px-4 py-3 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-150 border border-gray-300 flex items-center"
                                     >
                                         <RefreshCw className="h-4 w-4 mr-2" />
+                                        Reset
+                                    </button>
+
+                                    <button
+                                        onClick={fetchParticipants}
+                                        className="px-4 py-3 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-150 border border-gray-300 flex items-center"
+                                    >
+                                        <RotateCcw className="h-4 w-4 mr-2" />
                                         Refresh
                                     </button>
+
+
                                 </div>
 
                                 <div className="overflow-x-auto bg-white shadow-md rounded-lg">
