@@ -16,6 +16,7 @@ const ageGroups = [
     'Adult Over 60'
 ];
 
+
 const RegistrationForm = () => {
     const [formData, setFormData] = useState({
         firstName: '',
@@ -208,6 +209,7 @@ const RegistrationForm = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-100 py-12 px-4 sm:px-6 lg:px-8">
             <MusicPlayer />
+
             <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
                 <div className="px-4 py-5 sm:p-6">
                     <div className="text-center mb-8">
