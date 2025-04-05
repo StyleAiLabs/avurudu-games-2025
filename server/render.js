@@ -11,7 +11,8 @@ const {
     getAllGames,
     createGame,
     updateGame,
-    deleteGame
+    deleteGame,
+    deleteParticipant
 } = require('./db-pg');
 
 const app = express();
@@ -197,6 +198,29 @@ app.get('/api/admin/participants', basicAuth, async (req, res) => {
     } catch (err) {
         console.error('Error fetching participants:', err.message);
         return res.status(500).json({ error: 'Failed to fetch participants: ' + err.message });
+    }
+});
+
+app.delete('/api/admin/participants/:id', basicAuth, async (req, res) => {
+    const participantId = parseInt(req.params.id);
+    console.log(`Admin request received to delete participant ${participantId}`);
+
+    if (isNaN(participantId)) {
+        return res.status(400).json({ error: 'Invalid participant ID' });
+    }
+
+    try {
+        const result = await deleteParticipant(participantId);
+        console.log('Participant deleted successfully:', result);
+        res.json({ message: 'Participant deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting participant:', err.message);
+
+        if (err.message.includes('not found')) {
+            return res.status(404).json({ error: err.message });
+        }
+
+        return res.status(500).json({ error: 'Failed to delete participant: ' + err.message });
     }
 });
 

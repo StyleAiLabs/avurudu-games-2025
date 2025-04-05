@@ -262,6 +262,41 @@ async function getAllParticipants() {
     }
 }
 
+async function deleteParticipant(participantId) {
+    if (!participantId) {
+        throw new Error('Participant ID is required');
+    }
+
+    const client = await pool.connect();
+    try {
+        // Begin transaction
+        await client.query('BEGIN');
+
+        // Check if the participant exists
+        const checkResult = await client.query('SELECT id FROM participants WHERE id = $1', [participantId]);
+        if (checkResult.rows.length === 0) {
+            throw new Error('Participant not found');
+        }
+
+        // First delete from the junction table
+        await client.query('DELETE FROM participant_games WHERE participant_id = $1', [participantId]);
+
+        // Then delete the participant
+        await client.query('DELETE FROM participants WHERE id = $1', [participantId]);
+
+        // Commit transaction
+        await client.query('COMMIT');
+
+        return { id: participantId, message: 'Participant deleted successfully' };
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error deleting participant:', err);
+        throw err;
+    } finally {
+        client.release();
+    }
+}
 // Function to get all games
 async function getAllGames() {
     const client = await pool.connect();
@@ -460,5 +495,6 @@ module.exports = {
     getAllGames,
     createGame,
     updateGame,
-    deleteGame
+    deleteGame,
+    deleteParticipant
 };
