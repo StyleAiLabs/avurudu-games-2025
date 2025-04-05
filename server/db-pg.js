@@ -76,7 +76,7 @@ async function createTables() {
         await client.query('COMMIT');
 
         // Populate games table
-        await populateGames();
+        // await populateGames();
 
     } catch (err) {
         await client.query('ROLLBACK');
