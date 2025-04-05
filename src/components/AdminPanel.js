@@ -1,6 +1,6 @@
 // src/components/AdminPanel.js
 import React, { useState, useEffect } from 'react';
-import { Search, User, Calendar, Phone, Filter, Download, Printer, RefreshCw, LogOut, Gamepad, RotateCcw } from 'lucide-react';
+import { Search, User, Calendar, Phone, Filter, Download, Printer, RefreshCw, LogOut, Gamepad, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import GameManagement from './GameManagement';
 import config from '../config';
 
@@ -23,6 +23,9 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
         'Adult (Over 16)',
         'Adult Over 60'
     ];
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [recordsPerPage] = useState(50); // Set to display 50 records per page
 
     // Fetch data from the server with authentication
     const fetchParticipants = async () => {
@@ -137,6 +140,21 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
 
         return matchesSearch && matchesAgeGroup && matchesGame;
     });
+
+    // Add pagination calculation variables
+    const indexOfLastRecord = currentPage * recordsPerPage;
+    const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+    const currentRecords = filteredParticipants.slice(indexOfFirstRecord, indexOfLastRecord);
+    const totalPages = Math.ceil(filteredParticipants.length / recordsPerPage);
+
+    // Add pagination function
+    const paginate = (pageNumber) => {
+        if (pageNumber > 0 && pageNumber <= totalPages) {
+            setCurrentPage(pageNumber);
+            // Scroll to top of table when page changes
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
 
     // Update the deleteParticipant function
     const deleteParticipant = async (participantId) => {
@@ -418,7 +436,7 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
-                                                {filteredParticipants.map((participant) => (
+                                                {currentRecords.map((participant) => (
                                                     <tr key={participant.id} className="hover:bg-orange-50 transition-colors duration-150">
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="flex items-center">
@@ -490,9 +508,90 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
                                     )}
                                 </div>
 
+                                {filteredParticipants.length > 0 && (
+                                    <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4">
+                                        <div className="flex-1 flex justify-between sm:hidden">
+                                            <button
+                                                onClick={() => paginate(currentPage - 1)}
+                                                disabled={currentPage === 1}
+                                                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${currentPage === 1 ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                Previous
+                                            </button>
+                                            <button
+                                                onClick={() => paginate(currentPage + 1)}
+                                                disabled={currentPage === totalPages}
+                                                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${currentPage === totalPages ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-700 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                            <div>
+                                                <p className="text-sm text-gray-700">
+                                                    Showing <span className="font-medium">{indexOfFirstRecord + 1}</span> to{' '}
+                                                    <span className="font-medium">
+                                                        {Math.min(indexOfLastRecord, filteredParticipants.length)}
+                                                    </span>{' '}
+                                                    of <span className="font-medium">{filteredParticipants.length}</span> results
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                                    <button
+                                                        onClick={() => paginate(currentPage - 1)}
+                                                        disabled={currentPage === 1}
+                                                        className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 text-sm font-medium ${currentPage === 1 ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-500 hover:bg-gray-50'
+                                                            }`}
+                                                    >
+                                                        <span className="sr-only">Previous</span>
+                                                        <ChevronLeft className="h-5 w-5" />
+                                                    </button>
+
+                                                    {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                                                        let pageNum = i + 1;
+                                                        if (totalPages > 5) {
+                                                            if (currentPage > 3 && currentPage < totalPages - 2) {
+                                                                pageNum = currentPage - 2 + i;
+                                                            } else if (currentPage >= totalPages - 2) {
+                                                                pageNum = totalPages - 4 + i;
+                                                            }
+                                                        }
+
+                                                        return (
+                                                            <button
+                                                                key={pageNum}
+                                                                onClick={() => paginate(pageNum)}
+                                                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${pageNum === currentPage
+                                                                    ? 'z-10 bg-orange-50 border-orange-500 text-orange-600'
+                                                                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                                                    }`}
+                                                            >
+                                                                {pageNum}
+                                                            </button>
+                                                        );
+                                                    })}
+
+                                                    <button
+                                                        onClick={() => paginate(currentPage + 1)}
+                                                        disabled={currentPage === totalPages}
+                                                        className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 text-sm font-medium ${currentPage === totalPages ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-500 hover:bg-gray-50'
+                                                            }`}
+                                                    >
+                                                        <span className="sr-only">Next</span>
+                                                        <ChevronRight className="h-5 w-5" />
+                                                    </button>
+                                                </nav>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="mt-6 bg-gray-50 p-4 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
                                     <div className="text-sm text-gray-700">
-                                        Showing <span className="font-medium">{filteredParticipants.length}</span> of <span className="font-medium">{participants.length}</span> total registrations
+                                        {/* Total Registrations : <span className="font-medium">{participants.length}</span> */}
                                     </div>
                                     <div className="flex gap-3 w-full sm:w-auto">
                                         <button
