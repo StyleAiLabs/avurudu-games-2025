@@ -321,7 +321,7 @@ const RegistrationForm = () => {
                                         id="contactNumber"
                                         value={formData.contactNumber}
                                         onChange={handleInputChange}
-                                        placeholder="e.g. 0712345678"
+                                        placeholder="e.g. 0212345678"
                                         className={`appearance-none block w-full pl-10 pr-4 py-3 border ${errors.contactNumber ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-gray-900 sm:text-sm`}
                                     />
                                     <div className="absolute inset-0 rounded-md pointer-events-none ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-orange-500" aria-hidden="true"></div>
