@@ -61,10 +61,20 @@ const RegistrationForm = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value
-        });
+
+        // If changing age group, reset selected games
+        if (name === 'ageGroup') {
+            setFormData({
+                ...formData,
+                ageGroup: value,
+                selectedGames: [] // Reset selected games
+            });
+        } else {
+            setFormData({
+                ...formData,
+                [name]: value
+            });
+        }
 
         // Clear error for this field when user types
         if (errors[name]) {
