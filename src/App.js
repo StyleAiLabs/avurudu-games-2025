@@ -36,7 +36,7 @@ const App = () => {
                 </div>
                 <div className="ml-3">
                   <h1 className="text-xl font-bold text-orange-600 group-hover:text-orange-700 transition-colors duration-150">Avurudu Games 2025</h1>
-                  <p className="text-sm text-gray-500">New Year Celebrations</p>
+                  <p className="text-sm text-gray-500">Sri Lankan New Year Celebration</p>
                 </div>
               </Link>
 

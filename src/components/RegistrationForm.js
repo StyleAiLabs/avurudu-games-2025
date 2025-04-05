@@ -5,7 +5,6 @@ import config from '../config';
 
 // Define the age groups
 const ageGroups = [
-    'All Ages',
     'Under 5',
     'Under 6',
     'Between 6-12',
@@ -77,6 +76,14 @@ const RegistrationForm = () => {
     };
 
     const handleGameSelection = (game) => {
+        if (!formData.ageGroup) {
+            setErrors(prev => ({
+                ...prev,
+                ageGroup: 'Please select an age group before choosing games'
+            }));
+            return;
+        }
+
         const selectedGames = [...formData.selectedGames];
         if (selectedGames.includes(game)) {
             const index = selectedGames.indexOf(game);
@@ -166,7 +173,7 @@ const RegistrationForm = () => {
                     selectedGames: []
                 });
                 setIsSubmitted(false);
-            }, 3000);
+            }, 30000);
         } catch (error) {
             setSubmitError(error.message);
         } finally {
@@ -179,14 +186,59 @@ const RegistrationForm = () => {
             <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
                 <div className="px-4 py-5 sm:p-6">
                     <div className="text-center mb-8">
-                        <h2 className="text-3xl font-extrabold text-orange-600">Avurudu Games 2025</h2>
-                        <p className="mt-2 text-sm text-gray-600">Register for the New Year celebration games</p>
+                        <h2 className="text-3xl font-extrabold text-orange-600">Registraion Form</h2>
                     </div>
 
                     {isSubmitted ? (
-                        <div className="bg-green-50 p-4 rounded-md mb-6 flex items-center">
-                            <Check className="h-5 w-5 text-green-500 mr-2" />
-                            <span className="text-green-700">Registration successful! We look forward to seeing you at the event.</span>
+                        <div className="space-y-6">
+                            <div className="bg-green-50 p-4 rounded-md flex items-center">
+                                <Check className="h-5 w-5 text-green-500 mr-2" />
+                                <span className="text-green-700">Registration successful! We look forward to seeing you at the event.</span>
+                            </div>
+
+                            <div className="bg-white border border-green-100 rounded-lg p-4">
+                                <h3 className="text-lg font-medium text-gray-900 mb-4">Registration Summary</h3>
+
+                                <div className="space-y-3">
+                                    <div className="flex border-b border-gray-100 pb-2">
+                                        <span className="text-gray-500 w-1/3">Name:</span>
+                                        <span className="text-gray-900 font-medium">{formData.firstName} {formData.lastName}</span>
+                                    </div>
+
+                                    <div className="flex border-b border-gray-100 pb-2">
+                                        <span className="text-gray-500 w-1/3">Contact:</span>
+                                        <span className="text-gray-900 font-medium">{formData.contactNumber}</span>
+                                    </div>
+
+                                    <div className="flex border-b border-gray-100 pb-2">
+                                        <span className="text-gray-500 w-1/3">Age Group:</span>
+                                        <span className="text-gray-900 font-medium">{formData.ageGroup}</span>
+                                    </div>
+
+                                    <div className="flex">
+                                        <span className="text-gray-500 w-1/3">Games:</span>
+                                        <div className="flex-1">
+                                            <div className="flex flex-wrap gap-2">
+                                                {formData.selectedGames.map((game, index) => (
+                                                    <span
+                                                        key={index}
+                                                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800"
+                                                    >
+                                                        {game}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 bg-gray-50 p-4 rounded border border-gray-200">
+                                    <p className="text-sm text-gray-600">
+                                        <Info className="h-4 w-4 inline mr-2 text-gray-400" />
+                                        Please save this information for your reference
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-6">
@@ -302,6 +354,16 @@ const RegistrationForm = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Select Games (choose one or more)
                                 </label>
+                                {!formData.ageGroup && (
+                                    <div className="rounded-md bg-yellow-50 p-2 mb-3">
+                                        <div className="flex">
+                                            <Info className="h-5 w-5 text-yellow-400" />
+                                            <p className="ml-2 text-sm text-yellow-700">
+                                                Please select an age group first to see eligible games
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                                 {errors.selectedGames && (
                                     <div className="rounded-md bg-red-50 p-2 mb-3">
                                         <div className="flex">
@@ -331,7 +393,10 @@ const RegistrationForm = () => {
                                             games.map((game) => (
                                                 <div
                                                     key={game.id}
-                                                    className={`flex flex-col hover:bg-orange-50 p-3 rounded-md transition-colors duration-150 border ${formData.ageGroup && !game.age_limit.includes(formData.ageGroup) ? 'opacity-50' : ''}`}
+                                                    className={`flex flex-col p-3 rounded-md transition-colors duration-150 border 
+            ${!formData.ageGroup ? 'opacity-50 cursor-not-allowed' :
+                                                            formData.ageGroup && !game.age_limit.includes(formData.ageGroup) ? 'opacity-50' :
+                                                                'hover:bg-orange-50'}`}
                                                 >
                                                     <div className="flex items-start">
                                                         <input
@@ -352,11 +417,11 @@ const RegistrationForm = () => {
                                                                 </span>
                                                                 <span className="inline-flex items-center">
                                                                     <MapPin className="h-3.5 w-3.5 mr-1" />
-                                                                    {game.game_zone}
+                                                                    {game.game_zone || 'TBD'}
                                                                 </span>
                                                                 <span className="inline-flex items-center">
                                                                     <Clock className="h-3.5 w-3.5 mr-1" />
-                                                                    {game.game_time}
+                                                                    {game.game_time || 'TBD'}
                                                                 </span>
                                                             </div>
                                                             {game.pre_registration === 'Y' && (
@@ -375,7 +440,7 @@ const RegistrationForm = () => {
                                     </div>
                                     <div className="absolute inset-0 rounded-md pointer-events-none ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-orange-500" aria-hidden="true"></div>
                                 </div>
-                                <p className="mt-2 text-xs text-gray-500">Note: Group event registration will be onsite</p>
+                                <p className="mt-2 text-xs text-blue-500">Note: Group event registration will be onsite</p>
                             </div>
 
                             <div>
@@ -395,7 +460,7 @@ const RegistrationForm = () => {
                     <p className="text-xs text-center text-gray-500">© 2025 Avurudu Games Celebration Committee</p>
                 </div> */}
             </div>
-        </div>
+        </div >
     );
 };
 

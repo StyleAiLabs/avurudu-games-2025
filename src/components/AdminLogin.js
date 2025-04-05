@@ -139,10 +139,6 @@ const AdminLogin = ({ onLogin }) => {
                         </button>
                     </div>
                 </form>
-
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                    <p className="text-xs text-center text-gray-500">Default credentials: admin / pass@123</p>
-                </div>
             </div>
         </div>
     );

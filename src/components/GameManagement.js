@@ -13,8 +13,9 @@ const GameManagement = ({ authCredentials }) => {
     const [editingGame, setEditingGame] = useState(null);
     const [newGame, setNewGame] = useState({
         name: '',
-        age_limit: 'All Ages',
+        age_limit: '',
         pre_registration: 'Y',
+
         game_zone: '',
         game_time: ''
     });
@@ -23,7 +24,6 @@ const GameManagement = ({ authCredentials }) => {
     const [successMessage, setSuccessMessage] = useState(null);
 
     const ageGroups = [
-        'All Ages',
         'Under 5',
         'Under 6',
         'Between 6-12',
@@ -109,6 +109,10 @@ const GameManagement = ({ authCredentials }) => {
 
         if (!gameData.name.trim()) {
             errors.name = 'Game name is required';
+        }
+
+        if (!gameData.age_limit) {
+            errors.age_limit = 'Age limit is required';
         }
 
         return errors;
@@ -393,15 +397,18 @@ const GameManagement = ({ authCredentials }) => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label htmlFor="age_limit" className="block text-sm font-medium text-gray-700">
-                                    Age Limit
+                                    Age Limit<span className="text-red-500 ml-1">*</span>
                                 </label>
                                 <select
                                     id="age_limit"
                                     name="age_limit"
                                     value={newGame.age_limit}
                                     onChange={handleNewGameInputChange}
-                                    className="mt-1 block w-full rounded-md shadow-sm py-2 px-3 border border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                                    className={`mt-1 block w-full rounded-md shadow-sm py-2 px-3 border ${formErrors.age_limit ? 'border-red-300' : 'border-gray-300'
+                                        } focus:outline-none focus:ring-orange-500 focus:border-orange-500`}
+                                    required
                                 >
+                                    <option value="">Please select</option>
                                     {ageGroups.map((age) => (
                                         <option key={age} value={age}>
                                             {age}
@@ -518,8 +525,8 @@ const GameManagement = ({ authCredentials }) => {
                                                         name="name"
                                                         value={editingGame.name}
                                                         onChange={handleEditInputChange}
-                                                        className={`block w - full rounded - md shadow - sm py - 2 px - 3 border ${formErrors.name ? 'border-red-300' : 'border-gray-300'
-                                                            } focus: outline - none focus: ring - orange - 500 focus: border - orange - 500`}
+                                                        className={`block w-full rounded-md shadow-sm py-2 px-3 border ${formErrors.name ? 'border-red-300' : 'border-gray-300'
+                                                            } focus:outline-none focus:ring-orange-500 focus:border-orange-500`}
                                                     />
                                                     {formErrors.name && (
                                                         <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
