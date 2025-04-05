@@ -144,6 +144,22 @@ const RegistrationForm = () => {
         }
 
         setErrors(newErrors);
+
+        // If there are errors, scroll to the first error
+        if (Object.keys(newErrors).length > 0) {
+            // Find the first error field
+            const firstErrorField = Object.keys(newErrors)[0];
+            const errorElement = document.getElementById(firstErrorField);
+
+            if (errorElement) {
+                // Smooth scroll to the error element with some offset for better visibility
+                errorElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        }
+
         return Object.keys(newErrors).length === 0;
     };
 
