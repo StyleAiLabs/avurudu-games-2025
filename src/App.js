@@ -63,9 +63,9 @@ const App = () => {
           </Routes>
         </main>
 
-        <footer className="bg-gradient-to-r from-orange-50 to-yellow-50 border-t border-orange-200 py-6 fixed bottom-0 left-0 right-0 z-10">
+        <footer className="bg-gradient-to-r from-orange-50 to-yellow-50 border-t border-orange-200 py-6 left-0 right-0 z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-left text-xs text-gray-500">
+            <div className="text-center text-xs text-gray-500">
               © 2025 New Zealand Sri Lanka Buddhist Trust.
               All rights reserved.
             </div>

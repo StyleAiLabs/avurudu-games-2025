@@ -400,7 +400,7 @@ const RegistrationForm = () => {
                                     </div>
                                 )}
                                 <div className="relative">
-                                    <div className="space-y-2 max-h-60 overflow-y-auto p-4 border border-gray-300 rounded-md shadow-sm">
+                                    <div className="space-y-2 max-h-[350px] overflow-y-auto p-4 border border-gray-300 rounded-md shadow-sm">
                                         {loadingGames ? (
                                             <div className="text-center py-4">
                                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
