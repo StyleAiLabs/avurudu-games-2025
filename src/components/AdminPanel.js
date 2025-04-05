@@ -130,7 +130,11 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
             participant.ageGroup === filterAgeGroup ||
             participant.age_group === filterAgeGroup;
 
-        return matchesSearch && matchesAgeGroup;
+        // Add game filter
+        const matchesGame = !filterGame ||
+            (participant.games && Array.isArray(participant.games) && participant.games.includes(filterGame));
+
+        return matchesSearch && matchesAgeGroup && matchesGame;
     });
 
     // Handle CSV export
