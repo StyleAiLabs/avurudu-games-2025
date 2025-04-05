@@ -127,10 +127,6 @@ For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## Admin Access
 
-Default credentials:
-- Username: `admin`
-- Password: `pass@123`
-
 *Note: These credentials should be changed in a production environment.*
 
 ## Project Structure
@@ -158,6 +154,44 @@ Default credentials:
 ├── netlify.toml          # Netlify configuration
 └── package.json          # Project dependencies and scripts
 ```
+
+# Performance Testing Results
+
+## Test Configuration
+- **Test Tool**: k6 load testing framework
+- **Virtual Users**: Ramped up to 100 concurrent users
+- **Test Duration**: Approximately 6 minutes
+- **Scenario**: Simulated user registration with realistic game selection
+
+## Key Results
+
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
+| Response Time | 95% under 2s | 95% under 334.13ms | ✅ EXCELLENT |
+| Throughput | 10/second | 6.7/second | ⚠️ APPROACHING TARGET |
+| Error Rate | < 5% | 0.36% | ✅ EXCELLENT |
+| HTTP Request Failures | < 10% | 0.18% | ✅ EXCELLENT |
+| Successful Registrations | > 100 | 2,481 | ✅ EXCELLENT |
+
+## Detailed Metrics
+
+### Response Times
+- Average: 244.1ms
+- Minimum: 85ms
+- Median: 221.27ms
+- Maximum: 3.88s
+- p90: 276.86ms
+- p95: 334.13ms
+
+### Load Handling
+- Completed 2,490 iterations
+- Maximum of 100 concurrent virtual users
+- Average iteration duration: 6.48s
+
+### Reliability
+- 99.87% of all checks succeeded
+- Only 9 registration attempts failed out of 2,490
+
 
 ## Available Scripts
 

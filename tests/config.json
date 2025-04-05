@@ -1,0 +1,5 @@
+{
+    "BASE_URL": "http://localhost:3001",
+    "THINK_TIME_MIN": 1,
+    "THINK_TIME_MAX": 3
+}
