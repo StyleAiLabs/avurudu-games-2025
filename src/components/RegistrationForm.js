@@ -6,6 +6,7 @@ import MusicPlayer from './MusicPlayer';
 
 // Define the age groups
 const ageGroups = [
+    'All Ages',
     'Under 5',
     'Under 6',
     'Between 6-12',

@@ -24,6 +24,7 @@ const GameManagement = ({ authCredentials }) => {
     const [successMessage, setSuccessMessage] = useState(null);
 
     const ageGroups = [
+        'All Ages',
         'Under 5',
         'Under 6',
         'Between 6-12',

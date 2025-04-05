@@ -15,6 +15,7 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
     const [deletingParticipants, setDeletingParticipants] = useState(new Set());
 
     const ageGroups = [
+        'All Ages',
         'Under 5',
         'Under 6',
         'Between 6-12',
