@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Check, AlertCircle, ChevronDown, User, Phone, Clock, MapPin, Users, Info } from 'lucide-react';
 import config from '../config';
+import MusicPlayer from './MusicPlayer';
 
 // Define the age groups
 const ageGroups = [
@@ -205,6 +206,7 @@ const RegistrationForm = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-100 py-12 px-4 sm:px-6 lg:px-8">
+            <MusicPlayer />
             <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
                 <div className="px-4 py-5 sm:p-6">
                     <div className="text-center mb-8">
