@@ -196,7 +196,7 @@ const RegistrationForm = () => {
             <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
                 <div className="px-4 py-5 sm:p-6">
                     <div className="text-center mb-8">
-                        <h2 className="text-3xl font-extrabold text-orange-600">Registraion Form</h2>
+                        <h2 className="text-3xl font-extrabold text-orange-600">Registration Form</h2>
                     </div>
 
                     {isSubmitted ? (
