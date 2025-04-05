@@ -191,6 +191,18 @@ const RegistrationForm = () => {
         }
     };
 
+    // Add this sorting function before the return statement
+    const sortGamesByEligibility = (games, selectedAgeGroup) => {
+        return [...games].sort((a, b) => {
+            const aIsEligible = selectedAgeGroup && a.age_limit.includes(selectedAgeGroup);
+            const bIsEligible = selectedAgeGroup && b.age_limit.includes(selectedAgeGroup);
+
+            if (aIsEligible && !bIsEligible) return -1;
+            if (!aIsEligible && bIsEligible) return 1;
+            return a.name.localeCompare(b.name); // Sort alphabetically within each group
+        });
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-100 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
@@ -400,7 +412,7 @@ const RegistrationForm = () => {
                                                 <p className="text-gray-500">No games available for registration</p>
                                             </div>
                                         ) : (
-                                            games.map((game) => (
+                                            sortGamesByEligibility(games, formData.ageGroup).map((game) => (
                                                 <div
                                                     key={game.id}
                                                     className={`flex flex-col p-3 rounded-md transition-colors duration-150 border 
