@@ -12,6 +12,7 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
     const [filterAgeGroup, setFilterAgeGroup] = useState('');
     const [activeTab, setActiveTab] = useState('participants'); // 'participants' or 'games'
     const [filterGame, setFilterGame] = useState('');
+    const [deletingParticipants, setDeletingParticipants] = useState(new Set());
 
     const ageGroups = [
         'Under 5',
@@ -137,6 +138,39 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
         return matchesSearch && matchesAgeGroup && matchesGame;
     });
 
+    // Update the deleteParticipant function
+    const deleteParticipant = async (participantId) => {
+        if (!window.confirm('Are you sure you want to delete this participant? This action cannot be undone.')) {
+            return;
+        }
+
+        setDeletingParticipants(prev => new Set([...prev, participantId]));
+
+        try {
+            const response = await fetch(`${config.apiUrl}/api/admin/participants/${participantId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Basic ' + btoa(`${authCredentials.username}:${authCredentials.password}`)
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete participant');
+            }
+
+            setParticipants(participants.filter(p => p.id !== participantId));
+        } catch (error) {
+            console.error('Error deleting participant:', error);
+            alert('Failed to delete participant. Please try again.');
+        } finally {
+            setDeletingParticipants(prev => {
+                const next = new Set(prev);
+                next.delete(participantId);
+                return next;
+            });
+        }
+    };
+
     // Handle CSV export
     const exportToCSV = () => {
         // Create CSV content
@@ -223,7 +257,7 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
                 <div className="bg-white shadow-xl rounded-lg overflow-hidden">
                     <div className="px-6 py-5 border-b border-gray-200 bg-orange-50 flex justify-between items-center">
                         <div>
-                            <h1 className="text-2xl font-bold text-orange-700">Avurudu Games 2025 - Admin Panel</h1>
+                            <h1 className="text-2xl font-bold text-orange-700">Admin Panel</h1>
                             <p className="text-sm text-gray-600 mt-1">Manage registrations and games</p>
                         </div>
                         <button
@@ -378,6 +412,9 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
                                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                         Registration Date
                                                     </th>
+                                                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Actions
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
@@ -425,6 +462,26 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
                                                                 <Calendar className="h-4 w-4 text-gray-400 mr-2" />
                                                                 {formatDate(participant.registrationDate || participant.registration_date)}
                                                             </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                            <button
+                                                                onClick={() => deleteParticipant(participant.id)}
+                                                                disabled={deletingParticipants.has(participant.id)}
+                                                                className={`text-red-600 hover:text-red-900 focus:outline-none focus:underline inline-flex items-center
+        ${deletingParticipants.has(participant.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                            >
+                                                                {deletingParticipants.has(participant.id) ? (
+                                                                    <svg className="animate-spin h-4 w-4 mr-1" viewBox="0 0 24 24">
+                                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                                    </svg>
+                                                                ) : (
+                                                                    <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                    </svg>
+                                                                )}
+                                                                {deletingParticipants.has(participant.id) ? 'Deleting...' : 'Delete'}
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 ))}

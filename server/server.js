@@ -9,7 +9,8 @@ const {
     getAllGames,
     createGame,
     updateGame,
-    deleteGame
+    deleteGame,
+    deleteParticipant
 } = require('./db');
 
 const app = express();
@@ -137,6 +138,31 @@ app.get('/api/admin/participants', basicAuth, (req, res) => {
 
         console.log(`Returning ${participants.length} participants to admin`);
         res.json(participants);
+    });
+});
+
+// Protected admin API endpoint to delete a participant
+app.delete('/api/admin/participants/:id', basicAuth, (req, res) => {
+    const participantId = parseInt(req.params.id);
+    console.log(`Admin request received to delete participant ${participantId}`);
+
+    if (isNaN(participantId)) {
+        return res.status(400).json({ error: 'Invalid participant ID' });
+    }
+
+    deleteParticipant(participantId, (err, result) => {
+        if (err) {
+            console.error('Error deleting participant:', err.message);
+
+            if (err.message.includes('not found')) {
+                return res.status(404).json({ error: err.message });
+            }
+
+            return res.status(500).json({ error: 'Failed to delete participant: ' + err.message });
+        }
+
+        console.log('Participant deleted successfully:', result);
+        res.json({ message: 'Participant deleted successfully' });
     });
 });
 

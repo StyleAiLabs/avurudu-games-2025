@@ -409,6 +409,28 @@ function getAllParticipants(callback) {
     });
 }
 
+function deleteParticipant(participantId, callback) {
+    const query = 'DELETE FROM participants WHERE id = ?';
+
+    db.run(query, [participantId], function (err) {
+        if (err) {
+            return callback(err);
+        }
+
+        if (this.changes === 0) {
+            return callback(new Error('Participant not found'));
+        }
+
+        callback(null, { id: participantId });
+    });
+}
+
+// Add to exports
+module.exports = {
+    // ...existing exports...
+    deleteParticipant
+};
+
 // Function to get all games with metadata
 function getAllGames(callback) {
     console.log('Fetching all games from database');
@@ -783,5 +805,6 @@ module.exports = {
     getAllGames,
     createGame,
     updateGame,
-    deleteGame
+    deleteGame,
+    deleteParticipant
 };
