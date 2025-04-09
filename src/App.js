@@ -40,7 +40,7 @@ const App = () => {
 
                 </div>
                 <div className="ml-3">
-                  <h1 className="text-xl font-bold text-white text-shadow-lg group-hover:text-orange-200 transition-colors duration-150">Avurudu Games 2025</h1>
+                  <h1 className="text-xl font-bold text-white text-shadow-lg group-hover:text-orange-200 transition-colors duration-150">Avurudu Kreeda 2025</h1>
                   <p className="text-sm text-white text-shadow-md">Sri Lankan New Year Celebration</p>
                 </div>
               </Link>

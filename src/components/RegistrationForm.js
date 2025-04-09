@@ -163,6 +163,7 @@ const RegistrationForm = () => {
         return Object.keys(newErrors).length === 0;
     };
 
+    // Remove the setTimeout that resets the form
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -189,20 +190,9 @@ const RegistrationForm = () => {
                 throw new Error(errorData.error || 'Registration failed');
             }
 
-            // Show success message
+            // Show success message without auto-refresh
             setIsSubmitted(true);
 
-            // Reset the form after 3 seconds
-            setTimeout(() => {
-                setFormData({
-                    firstName: '',
-                    lastName: '',
-                    contactNumber: '',
-                    ageGroup: '',
-                    selectedGames: []
-                });
-                setIsSubmitted(false);
-            }, 30000);
         } catch (error) {
             setSubmitError(error.message);
         } finally {
@@ -262,14 +252,26 @@ const RegistrationForm = () => {
                                         <span className="text-gray-500 w-1/3">Games:</span>
                                         <div className="flex-1">
                                             <div className="flex flex-wrap gap-2">
-                                                {formData.selectedGames.map((game, index) => (
-                                                    <span
-                                                        key={index}
-                                                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800"
-                                                    >
-                                                        {game}
-                                                    </span>
-                                                ))}
+                                                {formData.selectedGames.map((gameName, index) => {
+                                                    const gameDetails = games.find(g => g.name === gameName);
+                                                    return (
+                                                        <div
+                                                            key={index}
+                                                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 mb-1 mr-1"
+                                                        >
+                                                            <span>{gameName}</span>
+                                                            {gameDetails && (
+                                                                <span className="ml-1 text-orange-600">
+                                                                    {" - "}
+                                                                    {gameDetails.game_zone ?
+                                                                        (!isNaN(gameDetails.game_zone) ? `Zone ${gameDetails.game_zone}` : gameDetails.game_zone)
+                                                                        : 'TBD'
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     </div>
