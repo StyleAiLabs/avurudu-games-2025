@@ -470,7 +470,7 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
                                                                 <div className="flex flex-wrap gap-1.5">
                                                                     {participant.games && participant.games.map((game, index) => (
                                                                         <span key={index} className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800">
-                                                                            {game}
+                                                                            {game.includes('Zone') ? game : (!isNaN(game) ? `Zone ${game}` : game)}
                                                                         </span>
                                                                     ))}
                                                                 </div>
