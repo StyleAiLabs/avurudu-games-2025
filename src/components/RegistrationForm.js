@@ -210,16 +210,15 @@ const RegistrationForm = () => {
         }
     };
 
-    // Add this sorting function before the return statement
-    const sortGamesByEligibility = (games, selectedAgeGroup) => {
-        return [...games].sort((a, b) => {
-            const aIsEligible = selectedAgeGroup && a.age_limit.includes(selectedAgeGroup);
-            const bIsEligible = selectedAgeGroup && b.age_limit.includes(selectedAgeGroup);
+    // Replace the existing sortGamesByEligibility function with this new one
+    const filterEligibleGames = (games, selectedAgeGroup) => {
+        // If no age group selected, return all games
+        if (!selectedAgeGroup) return [...games].sort((a, b) => a.name.localeCompare(b.name));
 
-            if (aIsEligible && !bIsEligible) return -1;
-            if (!aIsEligible && bIsEligible) return 1;
-            return a.name.localeCompare(b.name); // Sort alphabetically within each group
-        });
+        // Otherwise filter by selected age group
+        return games
+            .filter(game => game.age_limit.includes(selectedAgeGroup))
+            .sort((a, b) => a.name.localeCompare(b.name));
     };
 
     return (
@@ -242,6 +241,7 @@ const RegistrationForm = () => {
                             <div className="bg-white border border-green-100 rounded-lg p-4">
                                 <h3 className="text-lg font-medium text-gray-900 mb-4">Registration Summary</h3>
 
+                                {/* Existing summary fields */}
                                 <div className="space-y-3">
                                     <div className="flex border-b border-gray-100 pb-2">
                                         <span className="text-gray-500 w-1/3">Name:</span>
@@ -275,11 +275,26 @@ const RegistrationForm = () => {
                                     </div>
                                 </div>
 
-                                <div className="mt-6 bg-gray-50 p-4 rounded border border-gray-200">
-                                    <p className="text-sm text-gray-600">
-                                        <Info className="h-4 w-4 inline mr-2 text-gray-400" />
-                                        Please save this information for your reference
-                                    </p>
+                                {/* Add wristband collection notice */}
+                                <div className="mt-6 space-y-4">
+                                    <div className="bg-blue-50 p-4 rounded border border-blue-100">
+                                        <div className="flex items-start">
+                                            <Info className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+                                            <div>
+                                                <h4 className="text-sm font-medium text-blue-800">Important Information</h4>
+                                                <p className="mt-1 text-sm text-blue-700">
+                                                    Please collect your wristband from the game registration hut on the day of the event.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gray-50 p-4 rounded border border-gray-200">
+                                        <p className="text-sm text-gray-600">
+                                            <Info className="h-4 w-4 inline mr-2 text-gray-400" />
+                                            Please save this information for your reference
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -433,13 +448,10 @@ const RegistrationForm = () => {
                                                 <p className="text-gray-500">No games available for registration</p>
                                             </div>
                                         ) : (
-                                            sortGamesByEligibility(games, formData.ageGroup).map((game) => (
+                                            filterEligibleGames(games, formData.ageGroup).map((game) => (
                                                 <div
                                                     key={game.id}
-                                                    className={`flex flex-col p-3 rounded-md transition-colors duration-150 border 
-            ${!formData.ageGroup ? 'opacity-50 cursor-not-allowed' :
-                                                            formData.ageGroup && !game.age_limit.includes(formData.ageGroup) ? 'opacity-50' :
-                                                                'hover:bg-orange-50'}`}
+                                                    className="flex flex-col p-3 rounded-md transition-colors duration-150 border hover:bg-orange-50"
                                                 >
                                                     <div className="flex items-start">
                                                         <input
@@ -449,7 +461,6 @@ const RegistrationForm = () => {
                                                             checked={formData.selectedGames.includes(game.name)}
                                                             onChange={() => handleGameSelection(game.name)}
                                                             className="h-5 w-5 mt-1 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
-                                                            disabled={formData.ageGroup && !game.age_limit.includes(formData.ageGroup)}
                                                         />
                                                         <label htmlFor={`game-${game.id}`} className="ml-3 cursor-pointer flex-1">
                                                             <div className="font-medium text-gray-800">{game.name}</div>
@@ -460,7 +471,10 @@ const RegistrationForm = () => {
                                                                 </span>
                                                                 <span className="inline-flex items-center">
                                                                     <MapPin className="h-3.5 w-3.5 mr-1" />
-                                                                    {game.game_zone || 'TBD'}
+                                                                    {game.game_zone ?
+                                                                        (!isNaN(game.game_zone) ? `Zone ${game.game_zone}` : game.game_zone)
+                                                                        : 'TBD'
+                                                                    }
                                                                 </span>
                                                                 <span className="inline-flex items-center">
                                                                     <Clock className="h-3.5 w-3.5 mr-1" />
