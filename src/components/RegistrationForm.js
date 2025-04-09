@@ -9,11 +9,11 @@ const ageGroups = [
     'All Ages',
     'Under 5',
     'Under 6',
-    'Between 6-12',
+    '6-12 yrs',
+    '7-12 yrs',
     'Under 12',
-    'Between 12-15',
-    'Adult (Over 16)',
-    'Adult Over 60'
+    '12-15 yrs',
+    'ADULTS'
 ];
 
 
