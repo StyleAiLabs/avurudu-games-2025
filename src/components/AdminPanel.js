@@ -26,7 +26,7 @@ const AdminPanel = ({ authCredentials, onLogout }) => {
     ];
 
     const [currentPage, setCurrentPage] = useState(1);
-    const [recordsPerPage] = useState(50); // Set to display 50 records per page
+    const [recordsPerPage] = useState(20); // Set to display 20 records per page
 
     // Fetch data from the server with authentication
     const fetchParticipants = async () => {
